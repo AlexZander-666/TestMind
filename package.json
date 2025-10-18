@@ -1,0 +1,43 @@
+{
+  "name": "testmind",
+  "version": "0.1.0",
+  "description": "AI-powered test automation agent for modern development teams",
+  "private": true,
+  "author": "TestMind Team",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "test": "pnpm -r test",
+    "test:self": "tsx scripts/self-test.ts",
+    "test:real": "tsx scripts/test-real-projects.ts",
+    "demo:analyzer": "cd packages/core && tsx src/context/__tests__/demo.ts",
+    "demo:dependency": "cd packages/core && tsx src/context/__tests__/dependency-demo.ts",
+    "demo:generation": "tsx scripts/test-generation-demo.ts",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.1.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.12.0"
+}
+

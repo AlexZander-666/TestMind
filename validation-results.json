@@ -1,0 +1,50 @@
+{
+  "results": [
+    {
+      "function": "fetchUserData",
+      "type": "async-network",
+      "analysis": {
+        "complexity": 1,
+        "sideEffects": 1,
+        "sideEffectsAccurate": true
+      },
+      "quality": {
+        "correctness": 9,
+        "completeness": 5,
+        "readability": 7,
+        "maintainability": 6,
+        "mockStrategy": 9,
+        "assertions": 9,
+        "bestPractices": 8,
+        "total": 53
+      },
+      "cost": 0,
+      "duration": 27.499,
+      "testCode": "import { fetchUserData, User } from '../fixtures/sample'; // Assuming User type is exported from the same file\n\n// Mock the global fetch function before all tests\nglobal.fetch = jest.fn();\n\n// A reusable mock user object for consistency across tests\nconst mockUser: User = {\n  id: '123',\n  name: 'John Doe',\n  email: 'john.doe@example.com',\n};\n\ndescribe('fetchUserData', () => {\n  // Reset mocks before each test to ensure test isolation\n  beforeEach(() => {\n    (fetch as jest.Mock).mockClear();\n  });\n\n  // Test case for the happy path: successfully fetching a user\n  test('should fetch and return user data for a valid user ID', async () => {\n    // Arrange: Set up the mock fetch to return a successful response\n    (fetch as jest.Mock).mockResolvedValueOnce({\n      ok: true,\n      json: async () => mockUser,\n    });\n\n    const userId = '123';\n\n    // Act: Call the function with the test user ID\n    const user = await fetchUserData(userId);\n\n    // Assert: Verify the function behaved as expected\n    expect(fetch).toHaveBeenCalledTimes(1);\n    expect(fetch).toHaveBeenCalledWith(`https://api.example.com/users/${userId}`);\n    expect(user).toEqual(mockUser);\n  });\n\n  // Test case for an API error (e.g., 404 Not Found)\n  test('should throw an error when the network response is not ok', async () => {\n    // Arrange: Set up the mock fetch to simulate an API error\n    const errorStatusText = 'Not Found';\n    (fetch as jest.Mock).mockResolvedValueOnce({\n      ok: false,\n      status: 404,\n      statusText: errorStatusText,\n    });\n\n    const userId = 'nonexistent-user';\n\n    // Act & Assert: Expect the function call to reject with a specific error\n    await expect(fetchUserData(userId)).rejects.toThrow(\n      `Failed to fetch user: ${errorStatusText}`\n    );\n    expect(fetch).toHaveBeenCalledWith(`https://api.example.com/users/${userId}`);\n  });\n\n  // Test case for a network failure (e.g., no internet connection)\n  test('should handle network errors gracefully', async () => {\n    // Arrange: Set up the mock fetch to reject, simulating a network failure\n    const networkError = new Error('Network request failed');\n    (fetch as jest.Mock).mockRejectedValueOnce(networkError);\n\n    const userId = '456';\n\n    // Act & Assert: Ensure the promise rejects with the same network error\n    await expect(fetchUserData(userId)).rejects.toThrow(networkError);\n  });\n\n  // Test case for when the API returns a successful response but with invalid JSON\n  test('should throw an error if the response is not valid JSON', async () => {\n    // Arrange: Mock a successful response but make the .json() method fail\n    const jsonError = new SyntaxError('Unexpected token I in JSON at position 0');\n    (fetch as jest.Mock).mockResolvedValueOnce({\n      ok: true,\n      json: async () => {\n        throw jsonError;\n      },\n    });\n\n    const userId = '789';\n\n    // Act & Assert: The promise should reject with the JSON parsing error\n    await expect(fetchUserData(userId)).rejects.toThrow(jsonError);\n  });\n\n  // Boundary Condition: Test with an empty string for userId\n  test('should correctly handle an empty string as a user ID', async () => {\n    // Arrange: An empty ID might be invalid, so we expect a 404-like response\n    (fetch as jest.Mock).mockResolvedValueOnce({\n      ok: false,\n      status: 404,\n      statusText: 'Not Found',\n    });\n\n    const userId = '';\n\n    // Act & Assert: Expect the function to throw an error for the invalid ID\n    await expect(fetchUserData(userId)).rejects.toThrow('Failed to fetch user: Not Found');\n    expect(fetch).toHaveBeenCalledWith(`https://api.example.com/users/`);\n  });\n\n  // Boundary Condition: Test with a single character string for userId\n  test('should successfully fetch data for a single-character user ID', async () => {\n    // Arrange\n    const singleCharUser: User = { id: 'a', name: 'User A', email: 'a@a.com' };\n    (fetch as jest.Mock).mockResolvedValueOnce({\n      ok: true,\n      json: async () => singleCharUser,\n    });\n\n    const userId = 'a';\n\n    // Act\n    const user = await fetchUserData(userId);\n\n    // Assert\n    expect(user).toEqual(singleCharUser);\n    expect(fetch).toHaveBeenCalledWith(`https://api.example.com/users/${userId}`);\n  });\n\n  // Boundary Condition: Test with a very long string for userId\n  test('should successfully fetch data for a very long user ID', async () => {\n    // Arrange\n    const longId = 'a'.repeat(1000);\n    const longIdUser: User = { id: longId, name: 'Long ID User', email: 'long@id.com' };\n    (fetch as jest.Mock).mockResolvedValueOnce({\n      ok: true,\n      json: async () => longIdUser,\n    });\n\n    // Act\n    const user = await fetchUserData(longId);\n\n    // Assert\n    expect(user).toEqual(longIdUser);\n    expect(fetch).toHaveBeenCalledWith(`https://api.example.com/users/${longId}`);\n  });\n});"
+    },
+    {
+      "function": "calculateDiscount",
+      "type": "multi-branch-pure",
+      "analysis": {
+        "complexity": 7,
+        "sideEffects": 0,
+        "sideEffectsAccurate": true
+      },
+      "quality": {
+        "correctness": 9,
+        "completeness": 5,
+        "readability": 7,
+        "maintainability": 6,
+        "mockStrategy": 10,
+        "assertions": 9,
+        "bestPractices": 8,
+        "total": 54
+      },
+      "cost": 0,
+      "duration": 26.211,
+      "testCode": "import { calculateDiscount } from './sample'; // Adjust the import path as necessary\n\ndescribe('calculateDiscount', () => {\n  // Test suite for the 'new' customer type\n  describe(\"when customerType is 'new'\", () => {\n    test('should return a 10% discount for a standard positive price', () => {\n      // Arrange\n      const price = 100;\n      const customerType = 'new';\n      const expectedDiscount = 10;\n\n      // Act\n      const result = calculateDiscount(price, customerType);\n\n      // Assert\n      expect(result).toBe(expectedDiscount);\n    });\n\n    test('should correctly calculate a 10% discount for a floating-point price', () => {\n      // Arrange\n      const price = 89.5;\n      const customerType = 'new';\n      const expectedDiscount = 8.95;\n\n      // Act\n      const result = calculateDiscount(price, customerType);\n\n      // Assert\n      // Use toBeCloseTo for floating-point comparisons to avoid precision issues\n      expect(result).toBeCloseTo(expectedDiscount);\n    });\n  });\n\n  // Test suite for the 'regular' customer type\n  describe(\"when customerType is 'regular'\", () => {\n    test('should return a 15% discount for a standard positive price', () => {\n      // Arrange\n      const price = 200;\n      const customerType = 'regular';\n      const expectedDiscount = 30;\n\n      // Act\n      const result = calculateDiscount(price, customerType);\n\n      // Assert\n      expect(result).toBe(expectedDiscount);\n    });\n  });\n\n  // Test suite for the 'vip' customer type\n  describe(\"when customerType is 'vip'\", () => {\n    test('should return a 20% discount for a standard positive price', () => {\n      // Arrange\n      const price = 500;\n      const customerType = 'vip';\n      const expectedDiscount = 100;\n\n      // Act\n      const result = calculateDiscount(price, customerType);\n\n      // Assert\n      expect(result).toBe(expectedDiscount);\n    });\n  });\n\n  // Test suite for boundary conditions related to the price\n  describe('with boundary price values', () => {\n    test('should return a discount of 0 when the price is 0', () => {\n      // Arrange\n      const price = 0;\n      const customerType = 'vip';\n      const expectedDiscount = 0;\n\n      // Act\n      const result = calculateDiscount(price, customerType);\n\n      // Assert\n      expect(result).toBe(expectedDiscount);\n    });\n\n    test('should correctly calculate the discount for a very large price', () => {\n      // Arrange\n      const price = 1_000_000;\n      const customerType = 'regular';\n      const expectedDiscount = 150_000;\n\n      // Act\n      const result = calculateDiscount(price, customerType);\n\n      // Assert\n      expect(result).toBe(expectedDiscount);\n    });\n  });\n\n  // Test suite for invalid inputs and error handling\n  describe('with invalid inputs', () => {\n    test('should throw an error if the price is negative', () => {\n      // Arrange\n      const negativePrice = -50;\n      const customerType = 'new';\n\n      // Act & Assert\n      // The function call must be wrapped in a lambda for .toThrow() to catch the error.\n      expect(() => calculateDiscount(negativePrice, customerType)).toThrow(\n        'Price cannot be negative'\n      );\n    });\n\n    // This test ensures JavaScript robustness, as TypeScript's static typing\n    // would normally prevent passing an invalid customer type.\n    test('should throw an error for an unrecognized customer type', () => {\n      // Arrange\n      const price = 100;\n      // Use 'as any' to bypass TypeScript's type checking for this specific test case.\n      const invalidCustomerType = 'bronze' as any;\n\n      // Act & Assert\n      expect(() => calculateDiscount(price, invalidCustomerType)).toThrow(\n        'Invalid customer type'\n      );\n    });\n  });\n});"
+    }
+  ],
+  "totalCost": 0,
+  "timestamp": "2025-10-18T09:40:39.657Z"
+}
