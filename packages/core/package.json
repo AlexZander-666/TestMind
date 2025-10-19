@@ -1,6 +1,6 @@
 {
   "name": "@testmind/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Core engine for TestMind - code analysis, test generation, and evaluation",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -37,7 +37,8 @@
     "@langchain/community": "^0.0.20",
     "glob": "^10.3.10",
     "fast-glob": "^3.3.2",
-    "gray-matter": "^4.0.3"
+    "gray-matter": "^4.0.3",
+    "simple-git": "^3.28.0"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

@@ -1,6 +1,6 @@
 {
   "name": "@testmind/vscode",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "VS Code extension for TestMind (placeholder for future development)",
   "main": "./dist/extension.js",
   "scripts": {
