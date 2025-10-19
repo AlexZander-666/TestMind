@@ -5,7 +5,7 @@
 
 import chalk from 'chalk';
 import ora from 'ora';
-import { ContextEngine, TestGenerator, LLMService } from '@testmind/core';
+import { ContextEngine, TestGenerator, LLMService, TestReviewer, GitAutomation } from '@testmind/core';
 import { loadConfig } from '../utils/config';
 import path from 'path';
 
@@ -136,42 +136,96 @@ const generateUnitTest = async (
       console.log(chalk.gray('   💰 Estimated cost: ~$' + cost.toFixed(4)));
     }
 
-    console.log(chalk.green.bold('\n📝 Generated Test:\n'));
-    console.log(chalk.gray('─'.repeat(80)));
-    console.log(testSuite.code);
-    console.log(chalk.gray('─'.repeat(80)));
+    // ===== Diff-First Review Flow =====
+    console.log(chalk.green.bold('\n📋 Diff-First Review: Please review the proposed test\n'));
 
-    console.log(chalk.gray('\n📁 Suggested file: ' + chalk.cyan(testSuite.filePath)));
-    console.log(chalk.gray('⏱️  Estimated run time: ' + testSuite.metadata.estimatedRunTime + 'ms'));
+    const reviewer = new TestReviewer();
+    const diffResult = await reviewer.generateDiff(testSuite);
 
+    // Display diff
+    console.log(reviewer.formatForCLI(diffResult));
+    console.log('\n');
+
+    // Interactive review
     const inquirer = (await import('inquirer')).default;
-    const { shouldSave } = await inquirer.prompt([
+    const { action } = await inquirer.prompt([
       {
-        type: 'confirm',
-        name: 'shouldSave',
-        message: 'Save this test to file?',
-        default: true,
+        type: 'list',
+        name: 'action',
+        message: 'What would you like to do?',
+        choices: [
+          { name: '✅ Apply - Save test and commit to new branch', value: 'apply' },
+          { name: '💾 Apply without Git - Just save the file', value: 'apply-no-git' },
+          { name: '❌ Reject - Discard this test', value: 'reject' },
+          { name: '🔄 Regenerate - Try generating again', value: 'regenerate' },
+        ],
+        default: 'apply',
       },
     ]);
 
-    if (shouldSave) {
-      const saveSpinner = ora('Saving test file...').start();
-      const { safeWriteFile } = await import('../utils/file');
-      const saved = await safeWriteFile(testSuite.filePath, testSuite.code);
-      
-      if (saved) {
-        saveSpinner.succeed('Test saved to: ' + chalk.cyan(testSuite.filePath));
-        console.log(chalk.green('\n✅ Success! Test file created.\n'));
-        console.log(chalk.gray('Next steps:'));
-        console.log(chalk.gray('  1. Review the test: ' + testSuite.filePath));
-        const runCmd = config.testFramework === 'jest' ? 'npm test' : 'pnpm test';
-        console.log(chalk.gray('  2. Run tests: ' + runCmd + '\n'));
+    if (action === 'reject') {
+      console.log(chalk.yellow('\n⚠️  Test rejected. No changes made.\n'));
+      return;
+    }
+
+    if (action === 'regenerate') {
+      console.log(chalk.cyan('\n🔄 Regenerating test...\n'));
+      // Recursively call generateUnitTest
+      return await generateUnitTest(contextEngine, testGenerator, filePath, options, config);
+    }
+
+    // Apply the test
+    const saveSpinner = ora('Applying test...').start();
+
+    try {
+      await reviewer.applyTest(testSuite);
+      saveSpinner.succeed('Test saved to: ' + chalk.cyan(testSuite.filePath));
+
+      // Git integration (optional)
+      if (action === 'apply') {
+        const gitSpinner = ora('Creating Git branch and commit...').start();
+        
+        try {
+          const gitAutomation = new GitAutomation(config.repoPath);
+          const isGitRepo = await gitAutomation.isGitRepo();
+
+          if (isGitRepo) {
+            const commitMessage = GitAutomation.generateCommitMessage({
+              functionName: funcName,
+              filePath,
+            });
+
+            const gitResult = await gitAutomation.commitTestChanges({
+              message: commitMessage,
+              files: [testSuite.filePath],
+            });
+
+            gitSpinner.succeed(
+              'Created branch: ' + chalk.cyan(gitResult.branchName)
+            );
+
+            console.log(chalk.green('\n✅ Success! Test committed to new branch.\n'));
+            console.log(chalk.gray('📍 Branch: ' + chalk.cyan(gitResult.branchName)));
+          } else {
+            gitSpinner.info('Not a Git repository - skipping commit');
+            console.log(chalk.green('\n✅ Success! Test file created.\n'));
+          }
+        } catch (gitError) {
+          gitSpinner.warn('Git commit failed - test still saved');
+          console.log(chalk.yellow('\n⚠️  Test saved but Git commit failed: ' + gitError));
+        }
       } else {
-        saveSpinner.fail('Failed to save test file');
-        console.log(chalk.red('\n❌ Error: Could not write file\n'));
+        console.log(chalk.green('\n✅ Success! Test file created.\n'));
       }
-    } else {
-      console.log(chalk.yellow('\n⚠️  Test not saved. You can copy the code above.\n'));
+
+      console.log(chalk.gray('Next steps:'));
+      console.log(chalk.gray('  1. Review the test: ' + testSuite.filePath));
+      const runCmd = config.testFramework === 'jest' ? 'npm test' : 'pnpm test';
+      console.log(chalk.gray('  2. Run tests: ' + runCmd + '\n'));
+
+    } catch (error) {
+      saveSpinner.fail('Failed to apply test');
+      console.log(chalk.red('\n❌ Error: ' + error + '\n'));
     }
 
   } catch (error) {
