@@ -2,7 +2,7 @@
  * TestGenerator: Orchestrate test code generation
  */
 
-import type { FunctionContext, TestSuite, TestStrategy, TestType } from '@testmind/shared';
+import type { FunctionContext, TestSuite, TestStrategy, TestType, TestFramework } from '@testmind/shared';
 import { generateUUID } from '@testmind/shared';
 import { TestStrategyPlanner } from './TestStrategyPlanner';
 import { PromptBuilder } from './PromptBuilder';
@@ -22,7 +22,11 @@ export class TestGenerator {
   /**
    * Generate unit test for a function
    */
-  async generateUnitTest(context: FunctionContext, projectId: string): Promise<TestSuite> {
+  async generateUnitTest(
+    context: FunctionContext, 
+    projectId: string,
+    framework: TestFramework = 'jest'
+  ): Promise<TestSuite> {
     console.log(`[TestGenerator] Generating unit test for: ${context.signature.name}`);
 
     // Step 1: Plan test strategy
@@ -32,7 +36,7 @@ export class TestGenerator {
     const prompt = this.promptBuilder.buildUnitTestPrompt({
       context,
       strategy,
-      framework: 'jest', // TODO: Get from project config
+      framework: framework, // Use framework from parameter
       examples: [], // TODO: Get from semantic search
     });
 
@@ -49,13 +53,22 @@ export class TestGenerator {
     // Step 4: Extract and validate generated code
     const testCode = this.extractCodeFromResponse(response.content);
 
+    // Step 4.5: Validate test quality
+    const isValid = this.validateGeneratedTest(testCode, context.signature.name);
+    if (!isValid) {
+      throw new Error(
+        `Generated test for ${context.signature.name} failed quality check. ` +
+        `Please regenerate or check the function complexity.`
+      );
+    }
+
     // Step 5: Create test suite object
     const testSuite: TestSuite = {
       id: generateUUID(),
       projectId,
       targetEntityId: generateUUID(), // TODO: Link to actual entity ID
       testType: 'unit',
-      framework: 'jest',
+      framework: framework, // Use framework from parameter
       code: testCode,
       filePath: this.generateTestFilePath(context.signature.filePath),
       generatedAt: new Date(),
@@ -146,11 +159,57 @@ export class TestGenerator {
   /**
    * Generate test file path from source file path
    */
-  private generateTestFilePath(sourceFilePath: string): string {
-    // Convert src/utils/foo.ts -> __tests__/utils/foo.test.ts
-    const pathWithoutExt = sourceFilePath.replace(/\.(ts|js|py|java)$/, '');
-    const testPath = pathWithoutExt.replace('/src/', '/__tests__/');
-    return `${testPath}.test.ts`; // TODO: Use appropriate extension
+  private generateTestFilePath(
+    sourceFilePath: string,
+    strategy: { type: 'colocated' | 'separate' | 'nested' } = { type: 'colocated' }
+  ): string {
+    const path = require('path');
+    const parsed = path.parse(sourceFilePath);
+    const baseName = parsed.name;
+    const dirName = parsed.dir;
+    const ext = parsed.ext;
+    
+    switch (strategy.type) {
+      case 'colocated':
+        // lib/format.ts → lib/format.test.ts
+        return path.join(dirName, `${baseName}.test${ext}`);
+        
+      case 'separate':
+        // lib/format.ts → __tests__/lib/format.test.ts
+        const relativePath = dirName.replace(/^src\/?/, '');
+        return path.join('__tests__', relativePath, `${baseName}.test${ext}`);
+        
+      case 'nested':
+        // lib/format.ts → lib/__tests__/format.test.ts
+        return path.join(dirName, '__tests__', `${baseName}.test${ext}`);
+        
+      default:
+        // Fallback to colocated
+        return path.join(dirName, `${baseName}.test${ext}`);
+    }
+  }
+
+  /**
+   * Generate import path from test file to source file
+   */
+  private generateImportPath(testFilePath: string, sourceFilePath: string): string {
+    const path = require('path');
+    const testDir = path.dirname(testFilePath);
+    const sourceDir = path.dirname(sourceFilePath);
+    const sourceName = path.parse(sourceFilePath).name;
+    
+    // Calculate relative path
+    const relativePath = path.relative(testDir, sourceDir);
+    
+    if (relativePath === '' || relativePath === '.') {
+      // Same directory: ./format
+      return `./${sourceName}`;
+    } else {
+      // Different directory: ../lib/format
+      const importPath = path.join(relativePath, sourceName);
+      // Normalize to forward slashes for imports
+      return importPath.replace(/\\/g, '/');
+    }
   }
 
   /**
@@ -158,6 +217,36 @@ export class TestGenerator {
    */
   private extractMocksFromStrategy(strategy: TestStrategy): string[] {
     return strategy.mockStrategy.dependencies;
+  }
+
+  /**
+   * Validate generated test quality
+   * Returns false if test is empty or invalid
+   */
+  private validateGeneratedTest(code: string, functionName: string): boolean {
+    // Check 1: Must contain at least one test case
+    const hasTestCase = code.includes('it(') || code.includes('test(');
+    if (!hasTestCase) {
+      console.warn(`[TestGenerator] No test cases found for ${functionName}`);
+      return false;
+    }
+
+    // Check 2: Must contain assertions
+    const hasAssertions = code.includes('expect(');
+    if (!hasAssertions) {
+      console.warn(`[TestGenerator] No assertions found for ${functionName}`);
+      return false;
+    }
+
+    // Check 3: Must have reasonable length (>20 lines for actual test)
+    const lines = code.split('\n').filter(line => line.trim().length > 0);
+    if (lines.length < 10) {
+      console.warn(`[TestGenerator] Test too short for ${functionName}: ${lines.length} lines`);
+      return false;
+    }
+
+    console.log(`[TestGenerator] Test quality validation passed for ${functionName}`);
+    return true;
   }
 }
 

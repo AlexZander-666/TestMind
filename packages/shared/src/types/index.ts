@@ -24,6 +24,15 @@ export interface ProjectSettings {
   maxFileSize: number;
   llmProvider: LLMProvider;
   llmModel: string;
+  testLocationStrategy?: 'colocated' | 'separate' | 'nested';
+  testFilePattern?: string;
+}
+
+export interface TestLocationStrategy {
+  type: 'colocated' | 'separate' | 'nested';
+  // colocated: lib/format.ts → lib/format.test.ts
+  // separate: lib/format.ts → __tests__/lib/format.test.ts
+  // nested: lib/format.ts → lib/__tests__/format.test.ts
 }
 
 export type ProgrammingLanguage = 'typescript' | 'javascript' | 'python' | 'java';

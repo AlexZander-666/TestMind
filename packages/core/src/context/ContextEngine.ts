@@ -205,6 +205,68 @@ export class ContextEngine {
   async dispose(): Promise<void> {
     await this.semanticIndexer.dispose();
   }
+
+  /**
+   * Detect test location strategy from existing tests
+   * Returns the most common pattern used in the project
+   */
+  async detectTestStrategy(projectPath: string): Promise<{ type: 'colocated' | 'separate' | 'nested' }> {
+    const fastGlob = require('fast-glob');
+    const path = require('path');
+    
+    try {
+      // 1. Find existing test files
+      const existingTests = await fastGlob(['**/*.test.ts', '**/*.test.js', '**/*.spec.ts', '**/*.spec.js'], {
+        cwd: projectPath,
+        ignore: ['**/node_modules/**', '**/dist/**', '**/.next/**'],
+      });
+
+      if (existingTests.length === 0) {
+        // No existing tests, default to colocated
+        console.log('[ContextEngine] No existing tests found, defaulting to colocated strategy');
+        return { type: 'colocated' };
+      }
+
+      // 2. Analyze patterns
+      const patterns = existingTests.map((testPath: string) => {
+        // Remove .test or .spec suffix
+        const sourcePath = testPath.replace(/\.(test|spec)\.(ts|js)$/, '.$2');
+        return {
+          testPath,
+          testDir: path.dirname(testPath),
+          sourceDir: path.dirname(sourcePath),
+          hasTestsDir: testPath.includes('__tests__') || testPath.includes('test/'),
+        };
+      });
+
+      // 3. Determine most common pattern
+      const colocated = patterns.filter((p: any) => p.testDir === p.sourceDir && !p.hasTestsDir);
+      const separate = patterns.filter((p: any) => p.hasTestsDir && !p.testPath.match(/\/src\/__tests__\//));
+      const nested = patterns.filter((p: any) => p.testPath.match(/\/__tests__\//) && p.testDir.includes(p.sourceDir));
+
+      const totalTests = existingTests.length;
+      const colocatedPct = (colocated.length / totalTests) * 100;
+      const separatePct = (separate.length / totalTests) * 100;
+      const nestedPct = (nested.length / totalTests) * 100;
+
+      console.log(`[ContextEngine] Test strategy detection: colocated=${colocatedPct.toFixed(0)}%, separate=${separatePct.toFixed(0)}%, nested=${nestedPct.toFixed(0)}%`);
+
+      // 4. Return dominant pattern
+      if (colocatedPct > 50) {
+        return { type: 'colocated' };
+      } else if (separatePct > 50) {
+        return { type: 'separate' };
+      } else if (nestedPct > 50) {
+        return { type: 'nested' };
+      } else {
+        // Mixed or unclear, default to colocated
+        return { type: 'colocated' };
+      }
+    } catch (error) {
+      console.warn('[ContextEngine] Error detecting test strategy:', error);
+      return { type: 'colocated' };
+    }
+  }
 }
 
 

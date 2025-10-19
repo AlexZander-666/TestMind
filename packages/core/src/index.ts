@@ -13,6 +13,7 @@ export { DependencyGraphBuilder } from './context/DependencyGraphBuilder';
 export { TestGenerator } from './generation/TestGenerator';
 export { TestStrategyPlanner } from './generation/TestStrategyPlanner';
 export { PromptBuilder } from './generation/PromptBuilder';
+export { TestReviewer } from './generation/TestReviewer';
 
 // Test Evaluation
 export { TestEvaluator } from './evaluation/TestEvaluator';

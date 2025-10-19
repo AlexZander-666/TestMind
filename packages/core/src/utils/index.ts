@@ -3,6 +3,8 @@
  */
 
 export * from '@testmind/shared';
+export { GitAutomation } from './GitAutomation';
+export { FileCache } from './FileCache';
 
 /**
  * Parse file content safely

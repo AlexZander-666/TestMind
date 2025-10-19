@@ -58,17 +58,25 @@ export class StaticAnalyzer {
     const startTime = Date.now();
 
     // Find all source files based on configuration
-    const patterns = this.config.config.includePatterns.map((pattern) =>
-      path.join(projectPath, pattern)
-    );
+    // Note: patterns should be relative to projectPath, not absolute
+    const patterns = this.config.config.includePatterns;
+
+    console.log(`[StaticAnalyzer] Searching with patterns:`, patterns);
+    console.log(`[StaticAnalyzer] Project path:`, projectPath);
 
     const files = await fg(patterns, {
       ignore: this.config.config.excludePatterns,
       absolute: false,
       cwd: projectPath,
+      onlyFiles: true,
     });
 
     console.log(`[StaticAnalyzer] Found ${files.length} files to analyze`);
+    
+    // Debug: show first few files if found
+    if (files.length > 0) {
+      console.log(`[StaticAnalyzer] Sample files:`, files.slice(0, 3));
+    }
 
     // Analyze files in parallel
     const analyzedFiles: CodeFile[] = [];
