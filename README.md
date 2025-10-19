@@ -177,6 +177,7 @@ Commands: [a]ccept, [r]eject, [e]dit
 
 ## 📚 Documentation
 
+- [DOCS.md](DOCS.md) - Complete documentation index
 - [QUICK_START.md](QUICK_START.md) - 5-minute getting started guide
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Technical design
 - [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute  
