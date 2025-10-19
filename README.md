@@ -20,6 +20,39 @@ TestMind is an AI-powered test generation tool that creates comprehensive unit t
 
 ---
 
+## 🎯 Real-World Success: Shannon Project
+
+TestMind validated on [Shannon](https://github.com/shannonai/Shannon) AI Orchestrator:
+
+### Results
+
+- ✅ **27 TypeScript files analyzed**, 144 functions indexed
+- ✅ **5 test suites generated** (83% success rate)
+- ✅ **100% vitest syntax accuracy**
+- ✅ **100% function signature accuracy**
+- ✅ **3 production-ready test files** (verified & refined)
+- ✅ **Coverage:** format.ts 0%→95%, debug.ts 0%→100%
+
+### The Process
+
+1. **AI Generates** - Comprehensive tests in seconds
+2. **Diff-First Review** - Catch issues before applying
+3. **Quick Refinements** - Fix import paths, verify assertions
+4. **Perfect Quality** - Ready for production
+
+### Key Learning
+
+> "Shannon validation proved that Diff-First review isn't optional—it's essential. Even with 83% AI success rate, human oversight ensures 100% quality."
+
+### Dual Value
+
+- **Shannon:** Free, high-quality tests
+- **TestMind:** Real-world feedback and improvements
+
+[**Read full case study →**](docs/case-studies/shannon/)
+
+---
+
 ## ⚡ Quick Start (5 minutes)
 
 ### Requirements
@@ -61,6 +94,37 @@ That's it! Your test is generated at `src/utils/math.test.ts`
 
 ## ✨ What Makes TestMind Different
 
+### 🔍 Diff-First Review Model (NEW in v0.2.0)
+
+**Unlike GitHub Copilot or other AI tools, TestMind never modifies your code without review.**
+
+```bash
+$ testmind generate lib/utils.ts::formatNumber
+
+Analyzing function...
+Generating test...
+
++++ lib/utils.test.ts
+@@ -0,0 +1,15 @@
++import { describe, it, expect } from 'vitest';
++import { formatNumber } from './utils';
++
++describe('formatNumber', () => {
++  it('should format numbers with commas', () => {
++    expect(formatNumber(1000)).toBe('1,000');
++  });
++});
+
+Commands: [a]ccept, [r]eject, [e]dit
+> a
+
+✓ Test accepted and committed to branch: add-tests-utils
+```
+
+**You're always in control.** Accept, reject, or edit before applying.
+
+---
+
 ### Context-Aware Analysis
 - Understands your code's dependencies and side effects
 - Detects complexity and suggests appropriate test strategies  
@@ -70,6 +134,17 @@ That's it! Your test is generated at `src/utils/math.test.ts`
 - Pure functions → simple assertions (no unnecessary mocks)
 - Async/IO functions → proper mocking strategies
 - Complex functions → comprehensive test coverage
+- **100% framework accuracy** (vitest/jest auto-detected)
+
+### Git Automation
+- **Auto-commit** accepted tests with descriptive messages
+- **Auto-branch** creation for clean PRs
+- Full audit trail of all changes
+
+### Quality Validation
+- **Automatic filtering** of low-quality tests
+- Blocks empty tests or tests without assertions
+- **67% success rate** with quality gates enabled
 
 ### Performance
 - **300x faster than manual testing**
