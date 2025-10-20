@@ -1,0 +1,32 @@
+# Codecov configuration for TestMind
+
+coverage:
+  status:
+    project:
+      default:
+        target: 85%
+        threshold: 2%
+    patch:
+      default:
+        target: 80%
+        
+  precision: 2
+  round: down
+  range: 70...100
+
+comment:
+  layout: "reach,diff,flags,tree,footer"
+  behavior: default
+  require_changes: false
+
+ignore:
+  - "**/__tests__/**"
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "**/scripts/**"
+  - "**/dist/**"
+  - "**/node_modules/**"
+
+github_checks:
+  annotations: true
+

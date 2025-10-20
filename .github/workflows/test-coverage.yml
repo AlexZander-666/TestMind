@@ -1,0 +1,78 @@
+# Test Coverage Workflow
+# 运行测试并上传覆盖率到Codecov
+
+name: Test Coverage
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./packages/core/coverage/coverage-final.json
+          flags: unittests
+          name: testmind-coverage
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Comment coverage summary on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            if (fs.existsSync('./packages/core/coverage/coverage-summary.json')) {
+              const coverage = JSON.parse(fs.readFileSync('./packages/core/coverage/coverage-summary.json', 'utf-8'));
+              const total = coverage.total;
+              
+              const comment = `## 📊 Test Coverage Report
+              
+| Metric | Coverage |
+|--------|----------|
+| Lines | ${total.lines.pct}% |
+| Statements | ${total.statements.pct}% |
+| Functions | ${total.functions.pct}% |
+| Branches | ${total.branches.pct}% |
+
+**Target**: 85%+ coverage for core modules
+              `;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+
