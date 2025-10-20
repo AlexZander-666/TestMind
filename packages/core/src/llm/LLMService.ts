@@ -218,3 +218,120 @@ export class LLMService {
     this.logger.info('Cache cleared');
   }
 }
+
+      // 2. 存入缓存
+      if (this.cacheEnabled && response.content) {
+        llmCache.set(
+          request.prompt,
+          response.content,
+          request.provider,
+          request.model,
+          response.usage
+        );
+      }
+
+      return response;
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      
+      this.logger.error('Generation failed', {
+        provider: request.provider,
+        model: request.model,
+        duration,
+        error: error.message,
+        operation: 'generate'
+      });
+      
+      throw error;
+    }
+  }
+
+  /**
+   * Generate embeddings for semantic search
+   */
+  async generateEmbedding(text: string, provider: LLMProviderType = 'openai'): Promise<number[]> {
+    console.log(`[LLMService] Generating embedding with ${provider}`);
+
+    const llmProvider = this.providers.get(provider);
+    if (!llmProvider) {
+      throw new Error(`Unsupported provider: ${provider}`);
+    }
+
+    // TODO: Implement embedding generation
+    // For now, return empty array
+    return [];
+  }
+
+  /**
+   * Stream generation (for interactive use)
+   */
+  async *generateStream(request: LLMRequest): AsyncGenerator<string> {
+    // TODO: Implement streaming
+    const response = await this.generate(request);
+    yield response.content;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /** 启用/禁用缓存 */
+  setCacheEnabled(enabled: boolean): void {
+    this.cacheEnabled = enabled;
+    this.logger.debug('Cache toggled', { enabled });
+  }
+
+  /** 获取缓存统计 */
+  getCacheStats() {
+    return llmCache.getStats();
+  }
+
+  /** 清除缓存 */
+  clearCache(): void {
+    llmCache.clear();
+    this.logger.info('Cache cleared');
+  }
+
+
+  /** 启用/禁用缓存 */
+  setCacheEnabled(enabled: boolean): void {
+    this.cacheEnabled = enabled;
+    this.logger.debug('Cache toggled', { enabled });
+  }
+
+  /** 获取缓存统计 */
+  getCacheStats() {
+    return llmCache.getStats();
+  }
+
+  /** 清除缓存 */
+  clearCache(): void {
+    llmCache.clear();
+    this.logger.info('Cache cleared');
+  }
+}

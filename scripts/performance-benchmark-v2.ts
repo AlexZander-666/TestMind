@@ -217,3 +217,4 @@ if (require.main === module) {
   comparePerformance().catch(console.error);
 }
 
+ * 性能基准测试 v2 - with LLM缓存
