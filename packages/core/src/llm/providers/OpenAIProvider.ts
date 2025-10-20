@@ -44,12 +44,15 @@ export class OpenAIProvider implements LLMProvider {
     
     console.log(`[OpenAIProvider] Initializing with baseURL: ${baseURL}, model: ${modelName}`);
 
+    // 支持自定义maxTokens，默认10000以支持复杂测试生成
+    const maxTokens = parseInt(process.env.OPENAI_MAX_TOKENS || '10000', 10);
+    
     this.client = new ChatOpenAI({
       openAIApiKey: this.apiKey,
       modelName,
       temperature: 0.2,
-      maxTokens: 2000,
-      timeout: 60000,
+      maxTokens,
+      timeout: 120000, // 增加到120秒以支持大模型响应
       configuration: {
         baseURL,
       },

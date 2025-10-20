@@ -60,10 +60,11 @@ class RealWorldValidator {
 
   constructor() {
     // 初始化核心组件
+    // 使用OpenAI Provider兼容Gemini API
     const llmConfig = {
-      provider: process.env.TESTMIND_LLM_PROVIDER || 'gemini',
-      model: process.env.TESTMIND_LLM_MODEL || 'gemini-1.5-flash',
-      apiKey: process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY || ''
+      provider: 'openai',
+      model: process.env.OPENAI_MODEL || 'gemini-2.5-pro-preview-06-05-maxthinking',
+      apiKey: process.env.OPENAI_API_KEY || ''
     };
 
     this.llmService = new LLMService(llmConfig as any);
