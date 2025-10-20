@@ -10,3 +10,25 @@ contact_links:
     url: https://github.com/AlexZander-666/TestMind/blob/main/docs/QUICK_START_v0.3.0.md
     about: Get started with TestMind in 2 minutes
 
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/AlexZander-666/TestMind/discussions
+    about: Ask questions, share ideas, and discuss TestMind
+  - name: 📚 Documentation
+    url: https://github.com/AlexZander-666/TestMind#-documentation
+    about: Read the complete documentation
+  - name: 🚀 Quick Start
+    url: https://github.com/AlexZander-666/TestMind/blob/main/docs/QUICK_START_v0.3.0.md
+    about: Get started with TestMind in 2 minutes
+
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/AlexZander-666/TestMind/discussions
+    about: Ask questions, share ideas, and discuss TestMind
+  - name: 📚 Documentation
+    url: https://github.com/AlexZander-666/TestMind#-documentation
+    about: Read the complete documentation
+  - name: 🚀 Quick Start
+    url: https://github.com/AlexZander-666/TestMind/blob/main/docs/QUICK_START_v0.3.0.md
+    about: Get started with TestMind in 2 minutes
+
