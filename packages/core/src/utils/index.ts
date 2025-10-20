@@ -6,6 +6,23 @@ export * from '@testmind/shared';
 export { GitAutomation } from './GitAutomation';
 export { FileCache } from './FileCache';
 
+// Observability utilities
+export { logger, Logger, createComponentLogger, LogLevel, flushLogs } from './logger';
+export { metrics, Metrics, timeOperation, MetricNames } from './metrics';
+export { 
+  initializeErrorTracking, 
+  captureError, 
+  captureMessage,
+  setUserContext,
+  clearUserContext,
+  addBreadcrumb,
+  startTransaction,
+  withErrorTracking,
+  ErrorTracker,
+  createErrorTracker,
+  flushErrorTracking 
+} from './errorTracking';
+
 /**
  * Parse file content safely
  */

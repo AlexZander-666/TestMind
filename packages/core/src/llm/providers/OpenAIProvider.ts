@@ -38,9 +38,11 @@ export class OpenAIProvider implements LLMProvider {
       );
     }
 
-    // Support custom API endpoint (for OpenAI-compatible APIs like DeepSeek)
-    const baseURL = process.env.OPENAI_API_BASE || 'https://api.openai.com/v1';
+    // Support custom API endpoint (for OpenAI-compatible APIs like Gemini, DeepSeek, etc.)
+    const baseURL = process.env.OPENAI_API_BASE_URL || process.env.OPENAI_API_BASE || 'https://api.openai.com/v1';
     const modelName = process.env.OPENAI_MODEL || 'gpt-4-turbo-preview';
+    
+    console.log(`[OpenAIProvider] Initializing with baseURL: ${baseURL}, model: ${modelName}`);
 
     this.client = new ChatOpenAI({
       openAIApiKey: this.apiKey,

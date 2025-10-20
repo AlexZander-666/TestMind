@@ -13,6 +13,8 @@ import { StaticAnalyzer } from './StaticAnalyzer';
 import { SemanticIndexer } from './SemanticIndexer';
 import { DependencyGraphBuilder } from './DependencyGraphBuilder';
 import { FileCache } from '../utils/FileCache';
+import { createComponentLogger } from '../utils/logger';
+import { metrics } from '../utils/metrics';
 
 export interface IndexResult {
   filesIndexed: number;
@@ -34,6 +36,7 @@ export class ContextEngine {
   private semanticIndexer: SemanticIndexer;
   private dependencyBuilder: DependencyGraphBuilder;
   private fileCache: FileCache;
+  private logger = createComponentLogger('ContextEngine');
 
   constructor(private config: ProjectConfig) {
     // Create shared FileCache instance for all components
@@ -42,6 +45,8 @@ export class ContextEngine {
     this.staticAnalyzer = new StaticAnalyzer(config, this.fileCache);
     this.semanticIndexer = new SemanticIndexer(config);
     this.dependencyBuilder = new DependencyGraphBuilder(config);
+    
+    this.logger.debug('ContextEngine initialized', { projectId: config.id });
   }
 
   /**
@@ -51,18 +56,18 @@ export class ContextEngine {
   async indexProject(projectPath: string): Promise<IndexResult> {
     const startTime = Date.now();
     
-    console.log(`[ContextEngine] Starting project indexing: ${projectPath}`);
+    this.logger.info('Starting project indexing', { projectPath });
 
     // Step 1: Static analysis - extract AST and code structure
-    console.log('[ContextEngine] Step 1/3: Static analysis...');
+    this.logger.info('Step 1/3: Static analysis');
     const analysisResult = await this.staticAnalyzer.analyzeProject(projectPath);
     
     // Step 2: Build dependency graph
-    console.log('[ContextEngine] Step 2/3: Building dependency graph...');
+    this.logger.info('Step 2/3: Building dependency graph');
     await this.dependencyBuilder.buildGraph(analysisResult.files);
     
     // Step 3: Create semantic embeddings
-    console.log('[ContextEngine] Step 3/3: Creating embeddings...');
+    this.logger.info('Step 3/3: Creating embeddings');
     const embeddingResult = await this.semanticIndexer.indexCodebase(analysisResult.files);
 
     const duration = Date.now() - startTime;
@@ -74,11 +79,14 @@ export class ContextEngine {
       duration,
     };
 
-    console.log('[ContextEngine] Indexing complete:', result);
+    this.logger.info('Indexing complete', result);
+    metrics.recordHistogram('index.duration', duration);
+    metrics.recordGauge('index.files_count', result.filesIndexed);
+    metrics.recordGauge('index.functions_count', result.functionsExtracted);
     
     // Log FileCache statistics for performance monitoring
     const cacheStats = this.fileCache.getStats();
-    console.log('[ContextEngine] FileCache stats:', {
+    this.logger.debug('FileCache stats', {
       entries: cacheStats.totalEntries,
       sizeKB: (cacheStats.totalSizeBytes / 1024).toFixed(1),
       enabled: cacheStats.cacheEnabled,
@@ -92,7 +100,7 @@ export class ContextEngine {
    * This is used for unit test generation
    */
   async getFunctionContext(filePath: string, functionName: string): Promise<FunctionContext> {
-    console.log(`[ContextEngine] Getting context for: ${filePath}::${functionName}`);
+    this.logger.debug('Getting function context', { filePath, functionName });
 
     // Extract function details from static analysis
     const functionNode = await this.staticAnalyzer.getFunction(filePath, functionName);
@@ -153,7 +161,7 @@ export class ContextEngine {
    * This is used for integration test generation
    */
   async getModuleContext(modulePath: string): Promise<ModuleContext> {
-    console.log(`[ContextEngine] Getting module context: ${modulePath}`);
+    this.logger.debug('Getting module context', { modulePath });
 
     const moduleData = await this.staticAnalyzer.analyzeFile(modulePath);
     const dependencies = await this.dependencyBuilder.getModuleDependencies(modulePath);
@@ -166,7 +174,7 @@ export class ContextEngine {
         const ctx = await this.getFunctionContext(modulePath, func.name);
         functionContexts.push(ctx);
       } catch (error) {
-        console.warn(`Failed to get context for ${func.name}:`, error);
+        this.logger.warn(`Failed to get context for function`, { functionName: func.name, error });
       }
     }
 
@@ -184,7 +192,7 @@ export class ContextEngine {
    * Find similar code patterns, especially those with good test coverage
    */
   async semanticSearch(query: string, k = 5): Promise<SemanticSearchResult[]> {
-    console.log(`[ContextEngine] Semantic search: "${query}" (k=${k})`);
+    this.logger.debug('Semantic search', { query, k });
     return this.semanticIndexer.search(query, k);
   }
 
@@ -192,7 +200,7 @@ export class ContextEngine {
    * Incremental update - only reindex changed files
    */
   async updateFile(filePath: string): Promise<void> {
-    console.log(`[ContextEngine] Updating file: ${filePath}`);
+    this.logger.info('Updating file', { filePath });
     
     await this.staticAnalyzer.analyzeFile(filePath);
     await this.dependencyBuilder.updateFile(filePath);
@@ -223,7 +231,7 @@ export class ContextEngine {
 
       if (existingTests.length === 0) {
         // No existing tests, default to colocated
-        console.log('[ContextEngine] No existing tests found, defaulting to colocated strategy');
+        this.logger.info('No existing tests found, defaulting to colocated strategy');
         return { type: 'colocated' };
       }
 
@@ -249,7 +257,11 @@ export class ContextEngine {
       const separatePct = (separate.length / totalTests) * 100;
       const nestedPct = (nested.length / totalTests) * 100;
 
-      console.log(`[ContextEngine] Test strategy detection: colocated=${colocatedPct.toFixed(0)}%, separate=${separatePct.toFixed(0)}%, nested=${nestedPct.toFixed(0)}%`);
+      this.logger.info('Test strategy detection results', {
+        colocated: `${colocatedPct.toFixed(0)}%`,
+        separate: `${separatePct.toFixed(0)}%`,
+        nested: `${nestedPct.toFixed(0)}%`
+      });
 
       // 4. Return dominant pattern
       if (colocatedPct > 50) {
@@ -263,7 +275,7 @@ export class ContextEngine {
         return { type: 'colocated' };
       }
     } catch (error) {
-      console.warn('[ContextEngine] Error detecting test strategy:', error);
+      this.logger.warn('Error detecting test strategy', { error });
       return { type: 'colocated' };
     }
   }

@@ -5,6 +5,7 @@
 
 // Context Engine
 export { ContextEngine } from './context/ContextEngine';
+export { ContextManager } from './context/ContextManager';
 export { StaticAnalyzer } from './context/StaticAnalyzer';
 export { SemanticIndexer } from './context/SemanticIndexer';
 export { DependencyGraphBuilder } from './context/DependencyGraphBuilder';
@@ -14,6 +15,7 @@ export { TestGenerator } from './generation/TestGenerator';
 export { TestStrategyPlanner } from './generation/TestStrategyPlanner';
 export { PromptBuilder } from './generation/PromptBuilder';
 export { TestReviewer } from './generation/TestReviewer';
+export { TestValidator } from './generation/TestValidator';
 
 // Test Evaluation
 export { TestEvaluator } from './evaluation/TestEvaluator';
@@ -29,6 +31,12 @@ export { OllamaProvider } from './llm/providers/OllamaProvider';
 // Database
 export { Database } from './db/Database';
 export { VectorStore } from './db/VectorStore';
+
+// Self-Healing Engine
+export * from './self-healing';
+
+// Skills Framework
+export * from './skills';
 
 // Utilities
 export * from './utils';

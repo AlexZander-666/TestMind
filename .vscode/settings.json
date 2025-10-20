@@ -1,4 +1,9 @@
 {
+  "testmind.apiKey": "sk-8ZP1cge3SxPFY5nwKB6poOWxDLJczqzk4vZ1LnryW0WjZCPh",
+  "testmind.apiUrl": "https://metahk.zenymes.com/v1",
+  "testmind.model": "gemini-2.5-pro"
+}
+
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.codeActionsOnSave": {

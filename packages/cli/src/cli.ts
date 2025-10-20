@@ -10,6 +10,10 @@ import { generateCommand } from './commands/generate';
 import { runCommand } from './commands/run';
 import { analyzeCommand } from './commands/analyze';
 import { configCommand } from './commands/config';
+import { createContextCommand } from './commands/context';
+import { createUndoCommand } from './commands/undo';
+import { createInteractiveCommand } from './commands/interactive';
+import { healCommand } from './commands/heal';
 
 const program = new Command();
 
@@ -28,6 +32,9 @@ program
   .description('Initialize TestMind in your project')
   .option('-f, --force', 'Overwrite existing configuration')
   .action(initCommand);
+
+// Interactive session
+program.addCommand(createInteractiveCommand());
 
 // Generate tests
 program
@@ -63,6 +70,22 @@ program
   .argument('[key]', 'Configuration key')
   .argument('[value]', 'Configuration value')
   .action(configCommand);
+
+// Context management
+program.addCommand(createContextCommand());
+
+// Undo management
+program.addCommand(createUndoCommand());
+
+// Self-healing
+program
+  .command('heal')
+  .description('Auto-heal failing tests with AI-powered suggestions')
+  .argument('[test-file]', 'Test file to heal')
+  .option('--auto', 'Automatically apply high-confidence fixes')
+  .option('--analyze-only', 'Only analyze failures, don\'t suggest fixes')
+  .option('--use-llm', 'Enable LLM-powered fix suggestions')
+  .action(healCommand);
 
 // Parse arguments
 program.parse(process.argv);

@@ -7,16 +7,20 @@ import { generateUUID } from '@testmind/shared';
 import { TestStrategyPlanner } from './TestStrategyPlanner';
 import { PromptBuilder } from './PromptBuilder';
 import { LLMService } from '../llm/LLMService';
+import { createComponentLogger } from '../utils/logger';
+import { metrics, MetricNames } from '../utils/metrics';
 
 export class TestGenerator {
   private planner: TestStrategyPlanner;
   private promptBuilder: PromptBuilder;
   private llm: LLMService;
+  private logger = createComponentLogger('TestGenerator');
 
   constructor(llmService: LLMService) {
     this.llm = llmService;
     this.planner = new TestStrategyPlanner();
     this.promptBuilder = new PromptBuilder();
+    this.logger.debug('TestGenerator initialized');
   }
 
   /**
@@ -27,28 +31,47 @@ export class TestGenerator {
     projectId: string,
     framework: TestFramework = 'jest'
   ): Promise<TestSuite> {
-    console.log(`[TestGenerator] Generating unit test for: ${context.signature.name}`);
-
-    // Step 1: Plan test strategy
-    const strategy = await this.planner.planUnitTest(context);
-
-    // Step 2: Build prompt with context and strategy
-    const prompt = this.promptBuilder.buildUnitTestPrompt({
-      context,
-      strategy,
-      framework: framework, // Use framework from parameter
-      examples: [], // TODO: Get from semantic search
+    const startTime = Date.now();
+    
+    this.logger.info('Generating unit test', {
+      functionName: context.signature.name,
+      framework,
+      operation: 'generateUnitTest'
     });
 
-    // Step 3: Generate test code using LLM
-    const model = process.env.OPENAI_MODEL || 'gpt-4-turbo-preview';
-    const response = await this.llm.generate({
-      provider: 'openai',
-      model,
-      prompt,
-      temperature: 0.2, // Lower temperature for more consistent code
-      maxTokens: 4000, // Increased from 2000 to avoid truncation
-    });
+    try {
+      // Step 1: Plan test strategy
+      const strategy = await this.planner.planUnitTest(context);
+
+      // Step 2: Build prompt with context and strategy
+      const prompt = this.promptBuilder.buildUnitTestPrompt({
+        context,
+        strategy,
+        framework: framework, // Use framework from parameter
+        examples: [], // TODO: Get from semantic search
+      });
+
+      // Step 3: Generate test code using LLM
+      const model = process.env.OPENAI_MODEL || 'gpt-4-turbo-preview';
+      
+      this.logger.debug('Calling LLM for test generation', { model, framework });
+      
+      const response = await this.llm.generate({
+        provider: 'openai',
+        model,
+        prompt,
+        temperature: 0.2, // Lower temperature for more consistent code
+        maxTokens: 4000, // Increased from 2000 to avoid truncation
+      });
+      
+      // Record LLM metrics
+      metrics.incrementCounter(MetricNames.LLM_CALL_COUNT, 1, { 
+        operation: 'test-generation',
+        model 
+      });
+      metrics.recordHistogram(MetricNames.LLM_TOKEN_USAGE, response.usage.totalTokens, { 
+        model 
+      });
 
     // Step 4: Extract and validate generated code
     const testCode = this.extractCodeFromResponse(response.content);
@@ -62,28 +85,55 @@ export class TestGenerator {
       );
     }
 
-    // Step 5: Create test suite object
-    const testSuite: TestSuite = {
-      id: generateUUID(),
-      projectId,
-      targetEntityId: generateUUID(), // TODO: Link to actual entity ID
-      testType: 'unit',
-      framework: framework, // Use framework from parameter
-      code: testCode,
-      filePath: this.generateTestFilePath(context.signature.filePath),
-      generatedAt: new Date(),
-      generatedBy: 'ai',
-      metadata: {
-        targetFunction: context.signature.name,
-        dependencies: context.dependencies.map((d) => d.name),
-        mocks: this.extractMocksFromStrategy(strategy),
-        fixtures: [],
-        estimatedRunTime: 100, // ms
-      },
-    };
+      // Step 5: Create test suite object
+      const testSuite: TestSuite = {
+        id: generateUUID(),
+        projectId,
+        targetEntityId: generateUUID(), // TODO: Link to actual entity ID
+        testType: 'unit',
+        framework: framework, // Use framework from parameter
+        code: testCode,
+        filePath: this.generateTestFilePath(context.signature.filePath),
+        generatedAt: new Date(),
+        generatedBy: 'ai',
+        metadata: {
+          targetFunction: context.signature.name,
+          dependencies: context.dependencies.map((d) => d.name),
+          mocks: this.extractMocksFromStrategy(strategy),
+          fixtures: [],
+          estimatedRunTime: 100, // ms
+        },
+      };
 
-    console.log('[TestGenerator] Test suite generated successfully');
-    return testSuite;
+      const duration = Date.now() - startTime;
+      
+      // Record metrics
+      metrics.incrementCounter(MetricNames.TEST_GENERATION_COUNT, 1, { framework });
+      metrics.recordHistogram(MetricNames.TEST_GENERATION_DURATION, duration, { framework });
+      
+      this.logger.info('Test suite generated successfully', {
+        functionName: context.signature.name,
+        framework,
+        duration,
+        testFilePath: testSuite.filePath,
+        operation: 'generateUnitTest'
+      });
+
+      return testSuite;
+      
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      
+      this.logger.error('Test generation failed', {
+        functionName: context.signature.name,
+        framework,
+        duration,
+        error: error.message,
+        operation: 'generateUnitTest'
+      });
+      
+      throw error;
+    }
   }
 
   /**

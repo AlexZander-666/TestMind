@@ -19,6 +19,8 @@
 
 import { promises as fs } from 'fs';
 import { hashString } from '@testmind/shared';
+import { createComponentLogger } from './logger';
+import { metrics } from './metrics';
 
 export interface CacheEntry {
   content: string;
@@ -41,6 +43,7 @@ export interface FileCacheOptions {
 export class FileCache {
   private cache: Map<string, CacheEntry> = new Map();
   private options: Required<FileCacheOptions>;
+  private logger = createComponentLogger('FileCache');
 
   constructor(options: FileCacheOptions = {}) {
     this.options = {
@@ -48,22 +51,34 @@ export class FileCache {
       maxCacheSize: options.maxCacheSize ?? 100,
       cacheTTL: options.cacheTTL ?? 5 * 60 * 1000, // 5 minutes
     };
+    this.logger.debug('FileCache initialized', { options: this.options });
   }
 
   /**
    * Read file content with caching support
    */
   async readFile(filePath: string): Promise<string> {
+    const startTime = Date.now();
+    
     // Check cache first
     if (this.options.enableCache) {
       const cached = this.cache.get(filePath);
       if (cached && !this.isExpired(cached)) {
+        metrics.incrementCounter('cache.hits');
+        this.logger.debug('Cache hit', { filePath, hash: cached.hash });
         return cached.content;
       }
     }
 
-    // Read file from disk
+    // Cache miss - read from disk
+    metrics.incrementCounter('cache.misses');
+    this.logger.debug('Cache miss, reading from disk', { filePath });
+    
     const content = await fs.readFile(filePath, 'utf-8');
+    const duration = Date.now() - startTime;
+    
+    this.logger.debug('File read completed', { filePath, duration, size: content.length });
+    metrics.recordHistogram('file.read_duration', duration);
     
     // Update cache
     if (this.options.enableCache) {
@@ -106,13 +121,18 @@ export class FileCache {
    */
   invalidate(filePath: string): void {
     this.cache.delete(filePath);
+    this.logger.debug('Cache entry invalidated', { filePath });
+    metrics.incrementCounter('cache.invalidations');
   }
 
   /**
    * Clear entire cache
    */
   clear(): void {
+    const entriesCleared = this.cache.size;
     this.cache.clear();
+    this.logger.info('Cache cleared', { entriesCleared });
+    metrics.incrementCounter('cache.clears');
   }
 
   /**
@@ -177,6 +197,8 @@ export class FileCache {
 
     if (oldestKey) {
       this.cache.delete(oldestKey);
+      this.logger.debug('Evicted oldest cache entry (LRU)', { filePath: oldestKey });
+      metrics.incrementCounter('cache.evictions');
     }
   }
 }
@@ -196,6 +218,8 @@ export function getGlobalFileCache(options?: FileCacheOptions): FileCache {
 export function resetGlobalFileCache(): void {
   globalFileCache = null;
 }
+
+
 
 
 

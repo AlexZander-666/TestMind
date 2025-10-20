@@ -24,6 +24,8 @@ import { promises as fs } from 'fs';
 import fg from 'fast-glob';
 import path from 'path';
 import { FileCache } from '../utils/FileCache';
+import { createComponentLogger } from '../utils/logger';
+import { metrics, MetricNames } from '../utils/metrics';
 
 export interface AnalysisResult {
   files: CodeFile[];
@@ -35,6 +37,7 @@ export class StaticAnalyzer {
   private tsParser: Parser;
   private jsParser: Parser;
   private fileCache: FileCache;
+  private logger = createComponentLogger('StaticAnalyzer');
 
   constructor(private config: ProjectConfig, fileCache?: FileCache) {
     // Initialize TypeScript parser
@@ -47,22 +50,29 @@ export class StaticAnalyzer {
 
     // Initialize file cache (use provided instance or create new one)
     this.fileCache = fileCache || new FileCache();
+    
+    this.logger.debug('StaticAnalyzer initialized');
   }
 
   /**
    * Analyze entire project
    */
   async analyzeProject(projectPath: string): Promise<AnalysisResult> {
-    console.log(`[StaticAnalyzer] Analyzing project: ${projectPath}`);
-
     const startTime = Date.now();
+    
+    this.logger.info('Starting project analysis', { 
+      projectPath,
+      operation: 'analyzeProject'
+    });
 
     // Find all source files based on configuration
     // Note: patterns should be relative to projectPath, not absolute
     const patterns = this.config.config.includePatterns;
 
-    console.log(`[StaticAnalyzer] Searching with patterns:`, patterns);
-    console.log(`[StaticAnalyzer] Project path:`, projectPath);
+    this.logger.debug('Searching for files', { 
+      patterns, 
+      projectPath 
+    });
 
     const files = await fg(patterns, {
       ignore: this.config.config.excludePatterns,
@@ -71,12 +81,10 @@ export class StaticAnalyzer {
       onlyFiles: true,
     });
 
-    console.log(`[StaticAnalyzer] Found ${files.length} files to analyze`);
-    
-    // Debug: show first few files if found
-    if (files.length > 0) {
-      console.log(`[StaticAnalyzer] Sample files:`, files.slice(0, 3));
-    }
+    this.logger.info(`Found ${files.length} files to analyze`, {
+      fileCount: files.length,
+      sampleFiles: files.slice(0, 3)
+    });
 
     // Analyze files in parallel
     const analyzedFiles: CodeFile[] = [];
@@ -92,8 +100,12 @@ export class StaticAnalyzer {
           try {
             const absolutePath = path.join(projectPath, file);
             return await this.analyzeFile(absolutePath);
-          } catch (error) {
-            console.warn(`[StaticAnalyzer] Failed to analyze ${file}:`, error);
+          } catch (error: any) {
+            this.logger.warn(`Failed to analyze ${file}`, { 
+              file, 
+              error: error.message 
+            });
+            metrics.incrementCounter('analysis.file_errors', 1, { file });
             return null;
           }
         })
@@ -109,7 +121,22 @@ export class StaticAnalyzer {
     }
 
     const duration = Date.now() - startTime;
-    console.log(`[StaticAnalyzer] Analysis complete in ${duration}ms`);
+    
+    // Record metrics
+    metrics.recordHistogram(MetricNames.ANALYSIS_DURATION, duration, {
+      projectName: this.config.name,
+      fileCount: files.length.toString(),
+    });
+    metrics.recordGauge(MetricNames.ANALYSIS_FILE_COUNT, files.length);
+    metrics.recordGauge(MetricNames.ANALYSIS_FUNCTION_COUNT, totalFunctions);
+    
+    this.logger.info('Analysis complete', {
+      duration,
+      filesAnalyzed: analyzedFiles.length,
+      totalFunctions,
+      totalClasses,
+      operation: 'analyzeProject'
+    });
 
     return {
       files: analyzedFiles,

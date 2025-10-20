@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2025-10-20
+
+### 🎯 Strategic Updates
+
+#### Version Unification
+- **Unified all package versions** to 0.3.0 across the monorepo
+- Resolved version inconsistency between packages and README
+- Established foundation for v1.0 roadmap
+
+#### Skills Framework Documentation
+- **Comprehensive skills framework guide** for developers
+- Detailed Skill interface and BaseSkill usage documentation
+- Community contribution guidelines for custom skills
+- Prepared for v1.0 skills ecosystem launch
+
+#### Multi-LLM Support Enhancement
+- **Gemini API integration** for development and testing
+- Custom API endpoint configuration support
+- Improved LLM provider flexibility (OpenAI, Anthropic, Gemini, Ollama)
+- Enhanced testing infrastructure with Gemini 2.5 Pro
+
+#### Observability Foundation (P0)
+- **Structured logging** with Winston (replacing console.log)
+- **Error tracking** integration with Sentry
+- **Metrics collection** system for performance monitoring
+- JSON log format for better debugging and analysis
+
+### 📚 Documentation
+
+- Created `docs/guides/skills-framework.md` - comprehensive framework guide
+- Updated `.env.example` with multi-LLM configuration examples
+- Enhanced architecture documentation for v1.0 preparation
+
+### 🔧 Technical Improvements
+
+- Improved code quality and maintainability
+- Enhanced testing infrastructure
+- Better error handling and logging
+
+### 🚀 Roadmap to v1.0
+
+This release establishes the foundation for TestMind v1.0, which will include:
+- VS Code extension with native IDE integration
+- Formalized skills framework and marketplace
+- Multi-file context intelligence
+- CI/CD automation enhancements
+
+**Next milestone**: v1.0-alpha.1 (Month 4)
+
+---
+
 ## [0.2.0] - 2025-10-19
 
 ### 🎉 Major Features

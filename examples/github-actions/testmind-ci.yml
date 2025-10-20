@@ -1,0 +1,194 @@
+# TestMind GitHub Actions Integration Example
+# This workflow demonstrates how to integrate TestMind into your CI/CD pipeline
+
+name: TestMind AI Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Job 1: Generate missing tests
+  generate-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install TestMind
+        run: npm install -g testmind
+      
+      - name: Configure TestMind
+        run: |
+          echo "Configuring TestMind..."
+          testmind init --yes
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL || 'gpt-4-turbo-preview' }}
+      
+      - name: Generate tests for changed files
+        run: |
+          # Get list of changed TypeScript/JavaScript files
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(ts|js)$' || true)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No TypeScript/JavaScript files changed"
+            exit 0
+          fi
+          
+          echo "Generating tests for:"
+          echo "$CHANGED_FILES"
+          
+          # Generate tests for each changed file
+          for file in $CHANGED_FILES; do
+            echo "Generating test for $file..."
+            testmind generate "$file" --auto-accept --min-quality=80 || echo "Skipped $file"
+          done
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      
+      - name: Commit generated tests
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "🧪 Add AI-generated tests [TestMind]"
+          file_pattern: "**/*.test.ts **/*.test.js"
+  
+  # Job 2: Run tests with self-healing
+  run-tests-with-healing:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install TestMind
+        run: npm install -g testmind
+      
+      - name: Run tests with TestMind
+        run: testmind run --auto-heal --report
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: .testmind/reports/
+      
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = '.testmind/reports/summary.json';
+            
+            if (!fs.existsSync(reportPath)) {
+              return;
+            }
+            
+            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            
+            const body = `
+            ## 🧪 TestMind Test Results
+            
+            - ✅ Tests passed: ${report.passed}
+            - ❌ Tests failed: ${report.failed}
+            - 🔧 Auto-healed: ${report.healed}
+            - ⏱️ Duration: ${report.duration}ms
+            - 📊 Coverage: ${report.coverage}%
+            
+            ${report.healed > 0 ? `
+            ### 🎉 Self-Healing Success
+            TestMind automatically fixed ${report.healed} flaky test(s)!
+            ` : ''}
+            
+            ${report.failed > 0 ? `
+            ### ⚠️ Failures
+            ${report.failures.map(f => `- ${f.test}: ${f.reason}`).join('\n')}
+            ` : ''}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+  
+  # Job 3: Quality gate
+  quality-gate:
+    runs-on: ubuntu-latest
+    needs: run-tests-with-healing
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install TestMind
+        run: npm install -g testmind
+      
+      - name: Check test coverage
+        run: |
+          COVERAGE=$(testmind coverage)
+          echo "Coverage: $COVERAGE%"
+          
+          if [ "$COVERAGE" -lt "80" ]; then
+            echo "❌ Coverage below threshold (80%)"
+            exit 1
+          fi
+          
+          echo "✅ Coverage meets threshold"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      
+      - name: Check for flaky tests
+        run: |
+          FLAKY_RATE=$(testmind analyze --flaky-rate)
+          echo "Flaky rate: $FLAKY_RATE%"
+          
+          if [ "$(echo "$FLAKY_RATE > 5" | bc)" -eq 1 ]; then
+            echo "⚠️ Too many flaky tests ($FLAKY_RATE%)"
+            echo "Run 'testmind heal --all' to fix"
+            exit 1
+          fi
+          
+          echo "✅ Flaky rate acceptable"
+
+# Alternative: Using Gemini API (cost-effective)
+# Set these secrets in your repository:
+# - GEMINI_API_KEY: Your Gemini API key  
+# - GEMINI_API_BASE_URL: https://metahk.zenymes.com/v1
+#
+# Then use:
+# env:
+#   OPENAI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+#   OPENAI_API_BASE_URL: ${{ secrets.GEMINI_API_BASE_URL }}
+#   OPENAI_MODEL: gemini-2.5-pro
+
+
+
+
+
+
+
+
+

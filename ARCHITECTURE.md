@@ -136,16 +136,6 @@ cli/
 3. Interactive prompts with sensible defaults
 4. Colorful, readable output
 
-### packages/vscode
-
-**Purpose**: VS Code extension (future)
-
-**Planned Features**:
-- Code lens for test coverage
-- Quick actions for test generation
-- Inline quality indicators
-- Test result display
-
 ## Data Flow
 
 ### Test Generation Flow

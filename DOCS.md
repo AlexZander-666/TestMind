@@ -10,8 +10,8 @@
 
 | 文档 | 描述 | 阅读时间 |
 |------|------|----------|
-| [README.md](README.md) | 项目概览、核心特性、Shannon 案例研究 | 5 分钟 |
-| [QUICK_START.md](QUICK_START.md) | 5 分钟快速上手指南 | 5 分钟 |
+| [README.md](README.md) | 项目概览、核心特性、Canvas Mode | 5 分钟 |
+| [Quick Start v0.3.0](docs/QUICK_START_v0.3.0.md) | 2 分钟快速上手指南 | 2 分钟 |
 | [TESTING_GUIDE.md](TESTING_GUIDE.md) | 测试最佳实践和使用指南 | 10 分钟 |
 
 ### 开发者必读
@@ -42,11 +42,24 @@
 | [ADR-004](docs/adr/004-file-cache.md) | 文件缓存优化 | 2025-10 |
 | [ADR-005](docs/adr/005-shannon-case-study.md) | Shannon 验证方法论 | 2025-10 |
 
+### v0.3.0 新增文档
+
+| 文档 | 描述 | 类型 |
+|------|------|------|
+| [技能框架指南](docs/guides/skills-framework.md) | 完整的 Skills Framework 开发文档 | 开发指南 |
+| [创建自定义技能](docs/guides/creating-custom-skills.md) | 如何创建和发布自定义技能 | 开发指南 |
+| [自愈引擎指南](docs/guides/self-healing-guide.md) | 自愈测试系统使用指南 | 用户指南 |
+| [Canvas Mode 指南](docs/guides/canvas-mode-guide.md) | 非线性 AI 交互模式详解 | 用户指南 |
+| [社区建设指南](docs/COMMUNITY_BUILDING_GUIDE.md) | 社区运营和增长策略 | 战略文档 |
+| [功能矩阵](docs/business/feature-matrix.md) | 免费版 vs 付费版功能对比 | 商业文档 |
+| [TestMind 介绍](docs/blog/introducing-testmind.md) | 首篇博客文章草稿 | 内容营销 |
+
 ### 战略规划
 
 | 文档 | 描述 | 适用对象 |
 |------|------|----------|
 | [docs/1.md](docs/1.md) | 商业化战略和技术路线图 | 核心团队 |
+| [V0.3.0 发布总结](V0.3.0_RELEASE_SUMMARY.md) | v0.3.0 完整发布说明 | 全员 |
 
 ---
 
@@ -168,9 +181,10 @@
 
 ### 最近更新
 
+- **2025-10-20**: v0.3.0 发布，新增 7 个文档，整理归档结构
+- **2025-10-20**: 更新文档索引，添加 Skills Framework 等新文档
 - **2025-10-19**: 文档结构重组，创建 DOCS.md 索引
-- **2025-10-19**: v0.2.0 发布，更新 CHANGELOG.md 和 README.md
-- **2025-10-19**: 完成 Shannon 案例研究文档
+- **2025-10-19**: v0.2.0 发布，完成 Shannon 案例研究文档
 
 ### 贡献文档
 
@@ -185,14 +199,16 @@
 
 ## 📊 文档统计
 
-- **核心文档**: 7 个
-- **案例研究**: 1 个
+- **核心文档**: 8 个
+- **用户指南**: 6 个（含 v0.3.0 新增）
+- **案例研究**: 2 个
 - **架构决策记录**: 5 个
-- **总文档量**: 10,000+ 行
+- **社区内容**: 3 个讨论主题
+- **总文档量**: 15,000+ 行
 
 ---
 
 **提示**: 使用浏览器的搜索功能（Ctrl+F / Cmd+F）在本页面快速定位内容。
 
-**版本**: v0.2.0  
-**最后更新**: 2025-10-19
+**版本**: v0.3.0  
+**最后更新**: 2025-10-20

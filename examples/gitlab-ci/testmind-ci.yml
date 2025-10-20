@@ -1,0 +1,122 @@
+# TestMind GitLab CI Integration Example
+# Add this to your .gitlab-ci.yml
+
+variables:
+  NODE_VERSION: "20"
+  TESTMIND_VERSION: "latest"
+
+stages:
+  - test
+  - quality-gate
+
+# Job 1: Generate tests for MRs
+testmind-generate:
+  stage: test
+  image: node:${NODE_VERSION}
+  only:
+    - merge_requests
+  before_script:
+    - npm install -g testmind@${TESTMIND_VERSION}
+  script:
+    # Get changed files
+    - |
+      CHANGED_FILES=$(git diff --name-only $CI_MERGE_REQUEST_DIFF_BASE_SHA...HEAD | grep -E '\.(ts|js)$' || true)
+      
+      if [ -z "$CHANGED_FILES" ]; then
+        echo "No TypeScript/JavaScript files changed"
+        exit 0
+      fi
+      
+      # Initialize TestMind
+      testmind init --yes
+      
+      # Generate tests
+      for file in $CHANGED_FILES; do
+        echo "Generating test for $file..."
+        testmind generate "$file" --auto-accept --min-quality=80 || echo "Skipped $file"
+      done
+      
+      # Commit if tests were generated
+      if [ -n "$(git status --porcelain)" ]; then
+        git config user.name "TestMind Bot"
+        git config user.email "bot@testmind.dev"
+        git add "**/*.test.ts" "**/*.test.js"
+        git commit -m "🧪 Add AI-generated tests [TestMind]"
+        git push origin HEAD:$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+      fi
+  variables:
+    OPENAI_API_KEY: $OPENAI_API_KEY
+    OPENAI_MODEL: $OPENAI_MODEL
+  
+# Job 2: Run tests with self-healing
+testmind-test:
+  stage: test
+  image: node:${NODE_VERSION}
+  before_script:
+    - npm ci
+    - npm install -g testmind@${TESTMIND_VERSION}
+  script:
+    - testmind run --auto-heal --report --output=junit
+  after_script:
+    # Upload test results
+    - cat .testmind/reports/summary.json
+  artifacts:
+    when: always
+    reports:
+      junit: .testmind/reports/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - .testmind/reports/
+  coverage: '/Coverage: (\d+\.\d+)%/'
+  variables:
+    OPENAI_API_KEY: $OPENAI_API_KEY
+
+# Job 3: Quality gate
+testmind-quality-gate:
+  stage: quality-gate
+  image: node:${NODE_VERSION}
+  needs: [testmind-test]
+  script:
+    - npm install -g testmind@${TESTMIND_VERSION}
+    
+    # Check coverage
+    - |
+      COVERAGE=$(testmind coverage)
+      echo "Coverage: $COVERAGE%"
+      
+      if [ "$COVERAGE" -lt "80" ]; then
+        echo "❌ Coverage below threshold (80%)"
+        exit 1
+      fi
+    
+    # Check flaky rate
+    - |
+      FLAKY_RATE=$(testmind analyze --flaky-rate)
+      echo "Flaky rate: $FLAKY_RATE%"
+      
+      if [ "$(echo "$FLAKY_RATE > 5" | bc)" -eq 1 ]; then
+        echo "⚠️ Too many flaky tests"
+        exit 1
+      fi
+  variables:
+    OPENAI_API_KEY: $OPENAI_API_KEY
+  only:
+    - merge_requests
+    - main
+
+# Alternative: Using Gemini API for cost savings
+# Set these CI/CD variables in GitLab:
+# - OPENAI_API_KEY: Your Gemini API key
+# - OPENAI_API_BASE_URL: https://metahk.zenymes.com/v1
+# - OPENAI_MODEL: gemini-2.5-pro
+
+
+
+
+
+
+
+
+
