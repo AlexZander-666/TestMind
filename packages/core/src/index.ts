@@ -27,6 +27,7 @@ export { LLMService } from './llm/LLMService';
 export { OpenAIProvider } from './llm/providers/OpenAIProvider';
 export { AnthropicProvider } from './llm/providers/AnthropicProvider';
 export { OllamaProvider } from './llm/providers/OllamaProvider';
+export { LLMCache, llmCache } from './llm/LLMCache';
 
 // Database
 export { Database } from './db/Database';

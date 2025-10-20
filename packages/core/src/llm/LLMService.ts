@@ -8,6 +8,7 @@ import { AnthropicProvider } from './providers/AnthropicProvider';
 import { OllamaProvider } from './providers/OllamaProvider';
 import { createComponentLogger } from '../utils/logger';
 import { metrics, MetricNames } from '../utils/metrics';
+import { llmCache } from './LLMCache';
 
 export interface LLMProvider {
   generate(request: Omit<LLMRequest, 'provider'>): Promise<LLMResponse>;
@@ -16,6 +17,7 @@ export interface LLMProvider {
 export class LLMService {
   private providers: Map<LLMProviderType, LLMProvider> = new Map();
   private logger = createComponentLogger('LLMService');
+  private cacheEnabled: boolean = true; // 默认启用缓存
 
   constructor() {
     // Initialize providers
@@ -29,7 +31,7 @@ export class LLMService {
   }
 
   /**
-   * Generate completion from LLM
+   * Generate completion from LLM (with caching)
    */
   async generate(request: LLMRequest): Promise<LLMResponse> {
     const provider = this.providers.get(request.provider);
@@ -43,13 +45,33 @@ export class LLMService {
       throw error;
     }
 
+    // 1. 检查缓存
+    if (this.cacheEnabled) {
+      const cachedResponse = llmCache.get(request.prompt, request.provider, request.model);
+      
+      if (cachedResponse) {
+        this.logger.info('Cache hit', {
+          provider: request.provider,
+          model: request.model,
+          promptLength: request.prompt.length
+        });
+
+        return {
+          content: cachedResponse,
+          usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+          finishReason: 'cached'
+        } as LLMResponse;
+      }
+    }
+
     const startTime = Date.now();
     
     this.logger.info('Generating completion', {
       provider: request.provider,
       model: request.model,
       promptLength: request.prompt.length,
-      operation: 'generate'
+      operation: 'generate',
+      cached: false
     });
 
     try {
@@ -76,8 +98,20 @@ export class LLMService {
         duration,
         tokens: response.usage.totalTokens,
         finishReason: response.finishReason,
-        operation: 'generate'
+        operation: 'generate',
+        cached: false
       });
+
+      // 2. 存入缓存
+      if (this.cacheEnabled && response.content) {
+        llmCache.set(
+          request.prompt,
+          response.content,
+          request.provider,
+          request.model,
+          response.usage
+        );
+      }
 
       return response;
     } catch (error: any) {
@@ -147,3 +181,40 @@ export class LLMService {
 
 
 
+
+
+  /** 启用/禁用缓存 */
+  setCacheEnabled(enabled: boolean): void {
+    this.cacheEnabled = enabled;
+    this.logger.debug('Cache toggled', { enabled });
+  }
+
+  /** 获取缓存统计 */
+  getCacheStats() {
+    return llmCache.getStats();
+  }
+
+  /** 清除缓存 */
+  clearCache(): void {
+    llmCache.clear();
+    this.logger.info('Cache cleared');
+  }
+
+
+  /** 启用/禁用缓存 */
+  setCacheEnabled(enabled: boolean): void {
+    this.cacheEnabled = enabled;
+    this.logger.debug('Cache toggled', { enabled });
+  }
+
+  /** 获取缓存统计 */
+  getCacheStats() {
+    return llmCache.getStats();
+  }
+
+  /** 清除缓存 */
+  clearCache(): void {
+    llmCache.clear();
+    this.logger.info('Cache cleared');
+  }
+}
