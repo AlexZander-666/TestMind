@@ -35,6 +35,9 @@ export { VectorStore } from './db/VectorStore';
 // Self-Healing Engine
 export * from './self-healing';
 
+// Diff-First Workflow
+export * from './diff';
+
 // Skills Framework
 export * from './skills';
 
