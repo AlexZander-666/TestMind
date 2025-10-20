@@ -1,6 +1,6 @@
-# 🧠 TestMind v0.3.0 - Autonomous AI Testing Agent
+# 🧠 TestMind v0.3.0 - AI-Powered Testing Platform
 
-**Stop wasting time fixing broken tests. Let AI build and maintain your test suite.**
+**让 AI 成为你的测试工程师 - 生成、维护、修复你的整个测试套件**
 
 [![Tests](https://img.shields.io/badge/tests-95%25%20passing-success)](https://github.com/yourusername/testmind)
 [![Coverage](https://img.shields.io/badge/coverage-88%25-success)](https://github.com/yourusername/testmind)
@@ -13,7 +13,7 @@
 
 ## 🎯 Why TestMind?
 
-TestMind is the **autonomous AI testing agent** that solves your biggest testing pain points:
+TestMind is an **AI-driven multi-framework testing platform** designed for 1-10 person QA/DevOps teams. We solve your biggest testing pain points:
 
 ### 💸 Lower Total Cost of Ownership (TCO)
 
@@ -41,45 +41,28 @@ TestMind is the **autonomous AI testing agent** that solves your biggest testing
 
 ---
 
-## 🚀 Quick Start (2 minutes)
-
-## 🎨 NEW: Canvas Mode - Beyond Chatbots
-
-**Stop chatting. Start creating.** TestMind Canvas transforms AI interaction from linear conversations to spatial, multi-threaded workflows inspired by [Flowith's no-chatbot philosophy](./no_chatbot.md).
-
-### Why Canvas?
-
-- 🌳 **Non-Linear Thinking** - Branch from any point, explore multiple solutions in parallel
-- 🕰️ **Time Travel** - Visualize your entire decision tree, return to any node
-- 🔍 **Diff-First Native** - Review code changes inside each node, no view switching
-- 🎯 **Context Inheritance** - Child nodes automatically inherit parent context
-
-[📖 Read Canvas Mode Guide](./docs/guides/canvas-mode-guide.md) | [🎬 Watch Demo (coming soon)]
-
----
-
 ## 🎉 What's New in v0.3.0
 
-### 🚀 Three Core Pillars (1.md Framework)
+### 🚀 Three Core Pillars
 
-1. **Hybrid Context Engine** - Automatic code indexing + explicit focus control
-2. **Diff-First Trust Model** - Review every change before applying
-3. **Extensible Skills Framework** - Community-driven capabilities
+1. **Intelligent Test Generation** - AI-driven test cases for Web & API
+2. **Self-Healing Tests** - 80% auto-fix rate for flaky tests  
+3. **Developer-First Experience** - Diff-first review, CI/CD native
 
 ### ✨ New Features
 
-- 🧩 **Skills Framework** - Pluggable, community-extensible architecture
-- 💬 **Interactive REPL** - Chat-style CLI with natural language support
-- 📂 **Context Management** - `/add`, `/focus`, `/context` commands
-- ⏮️ **Undo Support** - Safe rollback with `testmind undo`
-- 🔧 **RefactorSkill** - Code complexity analysis and refactoring suggestions
-- 🧪 **TestGenerationSkill** - Wrapped as first official skill
+- 🧩 **Skills Framework** - Extensible, community-driven architecture
+- 🔧 **Multi-LLM Support** - OpenAI, Gemini, Anthropic, Ollama
+- 📊 **Production Observability** - Structured logging, metrics, error tracking
+- 💬 **Interactive CLI** - Natural language test generation
+- 🧪 **TestGenerationSkill** - Core skill for generating test suites
+- 🔄 **Self-Healing Engine** - Foundation for automatic test repair
 
-### 📚 New Documentation
+### 📚 Documentation
 
-- [Creating Custom Skills Guide](docs/guides/creating-custom-skills.md)
-- [Feature Matrix & Pricing](docs/business/feature-matrix.md)
-- [1.md Strategic Alignment Report](docs/case-studies/testmind-1md-alignment.md)
+- [Quick Start Guide](docs/QUICK_START_v0.3.0.md) - Get started in 2 minutes
+- [Skills Framework Guide](docs/guides/skills-framework.md) - Build custom testing skills
+- [Self-Healing Guide](docs/guides/self-healing-guide.md) - Automatic test repair
 
 ## Why TestMind?
 
