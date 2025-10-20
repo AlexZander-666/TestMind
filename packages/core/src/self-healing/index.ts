@@ -37,6 +37,15 @@ export {
   type FixContext
 } from './FixSuggester';
 
+export {
+  // Intent Tracker
+  IntentTracker,
+  createIntentTracker,
+  ActionType,
+  type TestIntent,
+  type ElementFeatures,
+  type IntentRecordOptions
+} from './IntentTracker';
 
-
-
+// Self-Healing Engine (集成所有组件)
+export { SelfHealingEngine, createSelfHealingEngine } from './SelfHealingEngine';
