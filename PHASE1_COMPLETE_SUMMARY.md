@@ -395,6 +395,80 @@ PR 评论测试结果
 
 ---
 
+## 🔬 验证框架就绪
+
+### 真实项目验证工具 ✅
+
+**完成日期**: 2025-10-20
+
+#### 交付物
+
+1. **`scripts/real-world-validation.ts`** (410行)
+   - 完整的项目验证流程
+   - 性能指标收集
+   - 自动化质量检查
+   - 验证报告生成
+
+2. **`scripts/prepare-shannon-pr.ts`** (420行)
+   - PR准备自动化
+   - 质量验证（70分通过线）
+   - 测试代码生成
+   - PR描述自动生成
+
+3. **`scripts/testmind-improvements.ts`** (380行)
+   - 问题追踪系统
+   - 自动修复框架
+   - 改进优先级管理
+   - 问题分类（Critical/High/Medium/Low）
+
+4. **`VALIDATION_GUIDE.md`**
+   - 完整验证流程说明
+   - 质量标准定义
+   - PR提交指南
+   - 故障排除指南
+
+#### 验证目标
+
+| 指标 | 目标值 | 验证方法 |
+|------|-------|---------|
+| 测试生成成功率 | ≥85% | real-world-validation.ts |
+| 自愈成功率 | ≥80% | 模拟失败场景 |
+| Diff接受率 | ≥70% | 用户反馈 |
+| 平均生成时间 | ≤10秒 | 性能监控 |
+| PR质量 | 可直接合并 | Shannon项目验证 |
+
+#### 验证流程
+
+```bash
+# 1. 完整验证
+pnpm tsx scripts/real-world-validation.ts
+
+# 2. 准备Shannon PR
+pnpm tsx scripts/prepare-shannon-pr.ts
+
+# 3. 追踪改进
+pnpm tsx scripts/testmind-improvements.ts
+```
+
+#### Shannon项目准备
+
+- ✅ 目标文件识别（format.ts, debug.ts, simClient.ts）
+- ✅ 测试生成脚本就绪
+- ✅ PR模板准备完毕
+- ✅ 质量验证标准明确
+- ⏳ 等待执行验证
+
+#### 改进追踪系统
+
+已识别的已知问题：
+- ✅ ISSUE-001: 生成Jest语法（已修复）
+- ✅ ISSUE-003: 生成空测试（已修复）
+- ⏳ ISSUE-002: 假设不存在的参数（Diff-First可捕获）
+- ⏳ ISSUE-004: LLM响应慢（缓存待实现）
+- ⏳ ISSUE-005: 缺少编辑模式（计划v0.4.1）
+
+---
+
 ## 🚧 已知限制与改进点
 
 ### 当前限制
