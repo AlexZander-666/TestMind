@@ -38,6 +38,9 @@ export * from './self-healing';
 // Diff-First Workflow
 export * from './diff';
 
+// CI/CD Integration
+export * from './ci-cd';
+
 // Skills Framework
 export * from './skills';
 
