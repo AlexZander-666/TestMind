@@ -36,7 +36,7 @@ export interface TestLocationStrategy {
 }
 
 export type ProgrammingLanguage = 'typescript' | 'javascript' | 'python' | 'java';
-export type TestFramework = 'jest' | 'vitest' | 'pytest' | 'junit' | 'mocha';
+export type TestFramework = 'jest' | 'vitest' | 'pytest' | 'junit' | 'mocha' | 'cypress' | 'playwright';
 export type LLMProvider = 'openai' | 'anthropic' | 'ollama' | 'custom';
 
 // ============================================================================
@@ -181,15 +181,27 @@ export interface TestSuite {
   metadata: TestMetadata;
 }
 
-export type TestType = 'unit' | 'integration' | 'e2e' | 'api';
+export type TestType = 'unit' | 'integration' | 'e2e' | 'api' | 'component' | 'graphql';
 
 export interface TestMetadata {
   targetFunction?: string;
   targetClass?: string;
-  dependencies: string[];
-  mocks: string[];
-  fixtures: string[];
-  estimatedRunTime: number;
+  dependencies?: string[];
+  mocks?: string[];
+  fixtures?: string[];
+  estimatedRunTime?: number;
+  // 扩展字段（用于不同类型的测试）
+  url?: string;
+  userFlow?: string;
+  browsers?: string[];
+  componentPath?: string;
+  componentName?: string;
+  baseUrl?: string;
+  endpointsCount?: number;
+  endpoint?: string;
+  skill?: string;
+  version?: string;
+  [key: string]: any; // 允许额外的元数据
 }
 
 export interface TestCase {
@@ -361,16 +373,21 @@ export interface CodeChunk {
   filePath: string;
   startLine: number;
   endLine: number;
-  embedding: number[];
-  metadata: ChunkMetadata;
+  embedding?: number[];
+  functionName?: string;
+  imports?: string[];
+  exports?: string[];
+  dependencies?: string[];
+  metadata?: ChunkMetadata;
 }
 
 export interface ChunkMetadata {
-  type: 'function' | 'class' | 'module';
-  name: string;
-  hasTests: boolean;
+  type?: 'function' | 'class' | 'module';
+  name?: string;
+  hasTests?: boolean;
   testQuality?: number;
-  language: ProgrammingLanguage;
+  language?: ProgrammingLanguage;
+  lastModified?: Date | string;
 }
 
 export interface SemanticSearchResult {
@@ -432,6 +449,12 @@ export class EvaluationError extends TestMindError {
     this.name = 'EvaluationError';
   }
 }
+
+// ============================================================================
+// Skill Framework Types
+// ============================================================================
+
+export * from './skill';
 
 
 

@@ -9,6 +9,13 @@
  * 5. 语义理解 (LLM)
  */
 
+import { IdLocator } from './strategies/IdLocator';
+import { CssSelectorLocator } from './strategies/CssSelectorLocator';
+import { XPathLocator } from './strategies/XPathLocator';
+import { VisualLocator } from './strategies/VisualLocator';
+import { SemanticLocator } from './strategies/SemanticLocator';
+import type { LLMService } from '../llm/LLMService';
+
 export interface ElementDescriptor {
   id?: string;
   cssSelector?: string;
@@ -39,13 +46,19 @@ export interface LocatorEngineConfig {
   enableSemanticMatching?: boolean;
   minConfidenceThreshold?: number;
   fallbackStrategies?: LocatorStrategy[];
+  llmService?: LLMService;
 }
 
 /**
  * 多策略元素定位引擎
  */
 export class LocatorEngine {
-  private config: Required<LocatorEngineConfig>;
+  private config: Required<Omit<LocatorEngineConfig, 'llmService'>> & { llmService?: LLMService };
+  private idLocator: IdLocator;
+  private cssLocator: CssSelectorLocator;
+  private xpathLocator: XPathLocator;
+  private visualLocator: VisualLocator;
+  private semanticLocator?: SemanticLocator;
 
   constructor(config: LocatorEngineConfig = {}) {
     this.config = {
@@ -58,8 +71,19 @@ export class LocatorEngine {
         LocatorStrategy.XPATH,
         LocatorStrategy.VISUAL_SIMILARITY,
         LocatorStrategy.SEMANTIC_INTENT
-      ]
+      ],
+      llmService: config.llmService
     };
+
+    // 初始化策略定位器
+    this.idLocator = new IdLocator();
+    this.cssLocator = new CssSelectorLocator();
+    this.xpathLocator = new XPathLocator();
+    this.visualLocator = new VisualLocator();
+    
+    if (this.config.llmService) {
+      this.semanticLocator = new SemanticLocator(this.config.llmService);
+    }
   }
 
   /**
@@ -95,25 +119,21 @@ export class LocatorEngine {
   ): Promise<LocatorResult | null> {
     switch (strategy) {
       case LocatorStrategy.ID:
-        return this.locateById(descriptor, context);
+        return this.idLocator.locate(descriptor, context);
       
       case LocatorStrategy.CSS_SELECTOR:
-        return this.locateByCssSelector(descriptor, context);
+        return this.cssLocator.locate(descriptor, context);
       
       case LocatorStrategy.XPATH:
-        return this.locateByXPath(descriptor, context);
+        return this.xpathLocator.locate(descriptor, context);
       
       case LocatorStrategy.VISUAL_SIMILARITY:
-        if (this.config.enableVisualMatching) {
-          return this.locateByVisual(descriptor, context);
-        }
-        return null;
+        if (!this.config.enableVisualMatching) return null;
+        return this.visualLocator.locate(descriptor, context);
       
       case LocatorStrategy.SEMANTIC_INTENT:
-        if (this.config.enableSemanticMatching) {
-          return this.locateBySemanticIntent(descriptor, context);
-        }
-        return null;
+        if (!this.config.enableSemanticMatching || !this.semanticLocator) return null;
+        return this.semanticLocator.locate(descriptor, context);
       
       default:
         return null;
@@ -121,203 +141,13 @@ export class LocatorEngine {
   }
 
   /**
-   * 策略 1: 通过 ID 定位 (最快，最可靠)
+   * 生成更稳定的选择器建议
    */
-  private async locateById(
-    descriptor: ElementDescriptor,
-    context?: any
-  ): Promise<LocatorResult | null> {
-    if (!descriptor.id) {
-      return null;
-    }
-
-    // 模拟 DOM 查询 (实际实现需要真实的页面上下文)
-    const element = this.simulateQuery(`#${descriptor.id}`, context);
-    
-    if (element) {
-      return {
-        element,
-        strategy: LocatorStrategy.ID,
-        confidence: 1.0, // ID 匹配通常是100%可靠的
-        metadata: {
-          selector: `#${descriptor.id}`
-        }
-      };
-    }
-
-    return null;
-  }
-
-  /**
-   * 策略 2: 通过 CSS Selector 定位
-   */
-  private async locateByCssSelector(
-    descriptor: ElementDescriptor,
-    context?: any
-  ): Promise<LocatorResult | null> {
-    if (!descriptor.cssSelector) {
-      return null;
-    }
-
-    const element = this.simulateQuery(descriptor.cssSelector, context);
-    
-    if (element) {
-      // 验证元素属性匹配度
-      const confidence = this.calculateAttributeMatchScore(element, descriptor);
-      
-      return {
-        element,
-        strategy: LocatorStrategy.CSS_SELECTOR,
-        confidence,
-        metadata: {
-          selector: descriptor.cssSelector
-        }
-      };
-    }
-
-    return null;
-  }
-
-  /**
-   * 策略 3: 通过 XPath 定位
-   */
-  private async locateByXPath(
-    descriptor: ElementDescriptor,
-    context?: any
-  ): Promise<LocatorResult | null> {
-    if (!descriptor.xpath) {
-      return null;
-    }
-
-    const element = this.simulateXPathQuery(descriptor.xpath, context);
-    
-    if (element) {
-      const confidence = this.calculateAttributeMatchScore(element, descriptor);
-      
-      return {
-        element,
-        strategy: LocatorStrategy.XPATH,
-        confidence,
-        metadata: {
-          xpath: descriptor.xpath
-        }
-      };
-    }
-
-    return null;
-  }
-
-  /**
-   * 策略 4: 通过视觉相似度定位 (AI-powered)
-   */
-  private async locateByVisual(
-    descriptor: ElementDescriptor,
-    context?: any
-  ): Promise<LocatorResult | null> {
-    if (!descriptor.visualSignature) {
-      return null;
-    }
-
-    // TODO: 实现视觉匹配算法
-    // 这需要：
-    // 1. 截取页面元素的视觉快照
-    // 2. 与存储的 visualSignature 比较
-    // 3. 使用图像相似度算法 (如 SSIM, perceptual hash)
-    // 4. 返回最相似的元素
-
-    // 暂时返回 null (未实现)
-    return null;
-  }
-
-  /**
-   * 策略 5: 通过语义理解定位 (LLM-powered)
-   */
-  private async locateBySemanticIntent(
-    descriptor: ElementDescriptor,
-    context?: any
-  ): Promise<LocatorResult | null> {
-    if (!descriptor.semanticIntent) {
-      return null;
-    }
-
-    // TODO: 实现语义匹配
-    // 这需要：
-    // 1. 使用 LLM 理解用户意图 (如 "登录按钮")
-    // 2. 分析页面所有元素的语义
-    // 3. 找到最匹配意图的元素
-    // 4. 返回最高语义相似度的元素
-
-    // 暂时返回 null (未实现)
-    return null;
-  }
-
-  /**
-   * 计算元素属性匹配分数
-   */
-  private calculateAttributeMatchScore(
-    element: any,
-    descriptor: ElementDescriptor
-  ): number {
-    let totalScore = 0;
-    let totalWeight = 0;
-
-    // 检查文本内容匹配
-    if (descriptor.textContent) {
-      const weight = 2.0;
-      totalWeight += weight;
-      
-      if (element.textContent?.includes(descriptor.textContent)) {
-        totalScore += weight;
-      }
-    }
-
-    // 检查属性匹配
-    if (descriptor.attributes) {
-      const weight = 1.0;
-      
-      for (const [key, value] of Object.entries(descriptor.attributes)) {
-        totalWeight += weight;
-        
-        if (element.getAttribute?.(key) === value) {
-          totalScore += weight;
-        }
-      }
-    }
-
-    // 如果没有任何匹配条件，返回基础置信度
-    if (totalWeight === 0) {
-      return 0.8;
-    }
-
-    return totalScore / totalWeight;
-  }
-
-  /**
-   * 模拟 DOM 查询 (仅用于测试和原型)
-   */
-  private simulateQuery(selector: string, context?: any): any {
-    // 在真实实现中，这会是：
-    // return context?.querySelector(selector) ?? document.querySelector(selector);
-    
-    // 暂时返回模拟对象
+  generateStableSelectors(element: any): ElementDescriptor {
     return {
-      selector,
-      textContent: 'Mock Element',
-      getAttribute: (name: string) => null
-    };
-  }
-
-  /**
-   * 模拟 XPath 查询 (仅用于测试和原型)
-   */
-  private simulateXPathQuery(xpath: string, context?: any): any {
-    // 在真实实现中，这会使用 document.evaluate()
-    
-    // 暂时返回模拟对象
-    return {
-      xpath,
-      textContent: 'Mock XPath Element',
-      getAttribute: (name: string) => null
+      id: element.id,
+      cssSelector: this.cssLocator.generateStableSelector(element),
+      xpath: this.xpathLocator.generateStableXPath(element),
     };
   }
 
@@ -364,18 +194,5 @@ export class LocatorEngine {
 export function createLocatorEngine(config?: LocatorEngineConfig): LocatorEngine {
   return new LocatorEngine(config);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

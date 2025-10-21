@@ -1,6 +1,6 @@
 {
   "name": "@testmind/shared",
-  "version": "0.3.0",
+  "version": "0.5.0-beta",
   "description": "Shared types and utilities for TestMind",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

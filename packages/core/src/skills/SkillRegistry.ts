@@ -1,208 +1,266 @@
 /**
- * SkillRegistry - Manages skill registration and discovery
- * Part of the extensible skill framework from 1.md
+ * SkillRegistry - 技能注册表
+ * 
+ * 管理所有测试技能的注册、发现和执行
  */
 
-import type { Skill, SkillContext, SkillMetadata } from './Skill';
+import type { TestSkill, SkillMetadata, SkillLoadOptions, TestContext } from '@testmind/shared';
+import { createComponentLogger } from '../utils/logger';
 
+const logger = createComponentLogger('SkillRegistry');
+
+/**
+ * 技能注册表
+ */
 export class SkillRegistry {
-  private skills: Map<string, Skill> = new Map();
-  private categories: Map<string, Set<string>> = new Map();
+  private skills: Map<string, TestSkill> = new Map();
+  private enabledSkills: Set<string> = new Set();
 
-  /**
-   * Register a skill
-   * @param skill - The skill to register
-   */
-  async register(skill: Skill): Promise<void> {
-    // Validate skill
-    if (!skill.name) {
-      throw new Error('Skill must have a name');
-    }
-
-    if (this.skills.has(skill.name)) {
-      throw new Error(`Skill ${skill.name} is already registered`);
-    }
-
-    // Check dependencies (optional)
-    if (skill.requiredDependencies) {
-      await this.checkDependencies(skill);
-    }
-
-    // Register skill
-    this.skills.set(skill.name, skill);
-
-    // Add to category index
-    if (!this.categories.has(skill.category)) {
-      this.categories.set(skill.category, new Set());
-    }
-    this.categories.get(skill.category)!.add(skill.name);
-
-    // Call onRegister hook if present
-    if (skill.onRegister) {
-      await skill.onRegister();
-    }
-
-    console.log(`[SkillRegistry] Registered skill: ${skill.name} (${skill.category})`);
+  constructor() {
+    logger.debug('SkillRegistry initialized');
   }
 
   /**
-   * Unregister a skill
-   * @param skillName - Name of the skill to unregister
+   * 注册技能
    */
-  async unregister(skillName: string): Promise<void> {
-    const skill = this.skills.get(skillName);
-    if (!skill) {
-      return;
+  register(skill: TestSkill): void {
+    const name = skill.metadata.name;
+
+    if (this.skills.has(name)) {
+      logger.warn('Skill already registered, overwriting', { name });
     }
 
-    // Remove from category index
-    const categorySkills = this.categories.get(skill.category);
-    if (categorySkills) {
-      categorySkills.delete(skillName);
-    }
+    this.skills.set(name, skill);
+    this.enabledSkills.add(name); // 默认启用
 
-    // Call dispose if present
-    if (skill.dispose) {
-      await skill.dispose();
-    }
-
-    // Remove from registry
-    this.skills.delete(skillName);
-
-    console.log(`[SkillRegistry] Unregistered skill: ${skillName}`);
+    logger.info('Skill registered', {
+      name,
+      version: skill.metadata.version,
+      frameworks: skill.metadata.supportedFrameworks,
+    });
   }
 
   /**
-   * Get a skill by name
-   * @param name - Skill name
-   * @returns The skill or undefined
+   * 注销技能
    */
-  getSkill(name: string): Skill | undefined {
+  unregister(name: string): boolean {
+    const existed = this.skills.delete(name);
+    this.enabledSkills.delete(name);
+
+    if (existed) {
+      logger.info('Skill unregistered', { name });
+    }
+
+    return existed;
+  }
+
+  /**
+   * 启用技能
+   */
+  enable(name: string): boolean {
+    if (!this.skills.has(name)) {
+      logger.warn('Cannot enable non-existent skill', { name });
+      return false;
+    }
+
+    this.enabledSkills.add(name);
+    logger.info('Skill enabled', { name });
+    return true;
+  }
+
+  /**
+   * 禁用技能
+   */
+  disable(name: string): boolean {
+    const existed = this.enabledSkills.delete(name);
+
+    if (existed) {
+      logger.info('Skill disabled', { name });
+    }
+
+    return existed;
+  }
+
+  /**
+   * 查找适合处理给定上下文的技能
+   */
+  findSkill(context: TestContext): TestSkill | null {
+    for (const [name, skill] of this.skills) {
+      // 跳过禁用的技能
+      if (!this.enabledSkills.has(name)) {
+        continue;
+      }
+
+      try {
+        if (skill.canHandle(context)) {
+          logger.debug('Found matching skill', {
+            name,
+            testType: context.testType,
+            framework: context.framework,
+          });
+          return skill;
+        }
+      } catch (error) {
+        logger.error('Error checking skill compatibility', { name, error });
+      }
+    }
+
+    logger.warn('No skill found for context', {
+      testType: context.testType,
+      framework: context.framework,
+    });
+
+    return null;
+  }
+
+  /**
+   * 查找所有可以处理给定上下文的技能
+   */
+  findAllSkills(context: TestContext): TestSkill[] {
+    const matches: TestSkill[] = [];
+
+    for (const [name, skill] of this.skills) {
+      if (!this.enabledSkills.has(name)) {
+        continue;
+      }
+
+      try {
+        if (skill.canHandle(context)) {
+          matches.push(skill);
+        }
+      } catch (error) {
+        logger.error('Error checking skill compatibility', { name, error });
+      }
+    }
+
+    logger.debug(`Found ${matches.length} matching skills`);
+
+    return matches;
+  }
+
+  /**
+   * 获取技能
+   */
+  getSkill(name: string): TestSkill | undefined {
     return this.skills.get(name);
   }
 
   /**
-   * Get all registered skills
-   * @returns Array of all skills
+   * 列出所有技能
    */
-  getAllSkills(): Skill[] {
-    return Array.from(this.skills.values());
-  }
+  listSkills(options: SkillLoadOptions = {}): SkillMetadata[] {
+    let skills = Array.from(this.skills.values());
 
-  /**
-   * Get skills by category
-   * @param category - Skill category
-   * @returns Array of skills in the category
-   */
-  getSkillsByCategory(category: string): Skill[] {
-    const skillNames = this.categories.get(category);
-    if (!skillNames) {
-      return [];
+    // 过滤：只显示启用的
+    if (options.enabledOnly) {
+      skills = skills.filter(s => this.enabledSkills.has(s.metadata.name));
     }
 
-    return Array.from(skillNames)
-      .map(name => this.skills.get(name))
-      .filter((skill): skill is Skill => skill !== undefined);
-  }
-
-  /**
-   * Find skills that can handle a given context
-   * @param context - The skill context
-   * @returns Array of skills that can handle the context
-   */
-  async findSkillsForContext(context: SkillContext): Promise<Skill[]> {
-    const matchingSkills: Skill[] = [];
-
-    for (const skill of this.skills.values()) {
-      try {
-        const canHandle = await Promise.resolve(skill.canHandle(context));
-        if (canHandle) {
-          matchingSkills.push(skill);
-        }
-      } catch (error) {
-        console.warn(`[SkillRegistry] Error checking if ${skill.name} can handle context:`, error);
-      }
-    }
-
-    return matchingSkills;
-  }
-
-  /**
-   * Get metadata for all skills
-   * @returns Array of skill metadata
-   */
-  getSkillMetadata(): SkillMetadata[] {
-    return Array.from(this.skills.values()).map(skill => ({
-      name: skill.name,
-      description: skill.description,
-      category: skill.category,
-      version: skill.version,
-      author: skill.author,
-    }));
-  }
-
-  /**
-   * Check if a skill is registered
-   * @param name - Skill name
-   * @returns true if registered
-   */
-  hasSkill(name: string): boolean {
-    return this.skills.has(name);
-  }
-
-  /**
-   * Get number of registered skills
-   * @returns Count of skills
-   */
-  getSkillCount(): number {
-    return this.skills.size;
-  }
-
-  /**
-   * Clear all registered skills
-   */
-  async clear(): Promise<void> {
-    // Dispose all skills
-    for (const skill of this.skills.values()) {
-      if (skill.dispose) {
-        await skill.dispose();
-      }
-    }
-
-    this.skills.clear();
-    this.categories.clear();
-  }
-
-  /**
-   * Check skill dependencies
-   * @param skill - The skill to check
-   */
-  private async checkDependencies(skill: Skill): Promise<void> {
-    if (!skill.requiredDependencies || skill.requiredDependencies.length === 0) {
-      return;
-    }
-
-    const missing: string[] = [];
-
-    for (const dep of skill.requiredDependencies) {
-      try {
-        // Try to require the dependency
-        require.resolve(dep);
-      } catch {
-        missing.push(dep);
-      }
-    }
-
-    if (missing.length > 0) {
-      console.warn(
-        `[SkillRegistry] Warning: Skill ${skill.name} has missing dependencies: ${missing.join(', ')}`
+    // 过滤：按框架
+    if (options.filterByFramework) {
+      skills = skills.filter(s =>
+        s.metadata.supportedFrameworks.includes(options.filterByFramework!)
       );
     }
+
+    // 过滤：按语言
+    if (options.filterByLanguage) {
+      skills = skills.filter(s =>
+        s.metadata.supportedLanguages.includes(options.filterByLanguage!)
+      );
+    }
+
+    return skills.map(s => s.metadata);
+  }
+
+  /**
+   * 获取技能统计信息
+   */
+  getStatistics(): {
+    total: number;
+    enabled: number;
+    disabled: number;
+    byFramework: Record<string, number>;
+    byLanguage: Record<string, number>;
+  } {
+    const byFramework: Record<string, number> = {};
+    const byLanguage: Record<string, number> = {};
+
+    for (const skill of this.skills.values()) {
+      // 统计框架
+      for (const framework of skill.metadata.supportedFrameworks) {
+        byFramework[framework] = (byFramework[framework] || 0) + 1;
+      }
+
+      // 统计语言
+      for (const language of skill.metadata.supportedLanguages) {
+        byLanguage[language] = (byLanguage[language] || 0) + 1;
+      }
+    }
+
+    return {
+      total: this.skills.size,
+      enabled: this.enabledSkills.size,
+      disabled: this.skills.size - this.enabledSkills.size,
+      byFramework,
+      byLanguage,
+    };
+  }
+
+  /**
+   * 清空所有技能
+   */
+  clear(): void {
+    const count = this.skills.size;
+    this.skills.clear();
+    this.enabledSkills.clear();
+    logger.info('All skills cleared', { count });
+  }
+
+  /**
+   * 验证技能是否符合接口规范
+   */
+  validateSkill(skill: TestSkill): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    // 检查元数据
+    if (!skill.metadata) {
+      errors.push('Missing metadata');
+    } else {
+      if (!skill.metadata.name) errors.push('Missing metadata.name');
+      if (!skill.metadata.version) errors.push('Missing metadata.version');
+      if (!skill.metadata.description) errors.push('Missing metadata.description');
+      if (!skill.metadata.author) errors.push('Missing metadata.author');
+      if (!skill.metadata.supportedFrameworks || skill.metadata.supportedFrameworks.length === 0) {
+        errors.push('Missing metadata.supportedFrameworks');
+      }
+      if (!skill.metadata.supportedLanguages || skill.metadata.supportedLanguages.length === 0) {
+        errors.push('Missing metadata.supportedLanguages');
+      }
+    }
+
+    // 检查必需方法
+    if (typeof skill.canHandle !== 'function') {
+      errors.push('Missing canHandle method');
+    }
+
+    if (typeof skill.generateTest !== 'function') {
+      errors.push('Missing generateTest method');
+    }
+
+    if (typeof skill.validateTest !== 'function') {
+      errors.push('Missing validateTest method');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
   }
 }
 
 /**
- * Global skill registry instance
+ * 全局技能注册表实例
  */
 export const globalSkillRegistry = new SkillRegistry();
 

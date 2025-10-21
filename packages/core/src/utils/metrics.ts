@@ -174,6 +174,26 @@ export class Metrics {
   }
 
   /**
+   * Get counter value
+   */
+  getCounter(name: string, labels?: Labels): number {
+    const labelKey = this.serializeLabels(labels);
+    return this.counters.get(name)?.get(labelKey) || 0;
+  }
+
+  /**
+   * Get histogram average
+   */
+  getHistogramAverage(name: string, labels?: Labels): number {
+    const labelKey = this.serializeLabels(labels);
+    const values = this.histograms.get(name)?.get(labelKey);
+    
+    if (!values || values.length === 0) return 0;
+    
+    return values.reduce((a, b) => a + b, 0) / values.length;
+  }
+
+  /**
    * Export metrics in Prometheus format (for future integration)
    */
   exportPrometheus(): string {
@@ -326,8 +346,16 @@ export const MetricNames = {
   TEST_GENERATION_DURATION: 'test.generation_duration',
   TEST_QUALITY_SCORE: 'test.quality_score',
   
+  // Healing metrics (新增)
+  HEALING_ATTEMPTS: 'healing.attempts',
+  HEALING_SUCCESS: 'healing.success',
+  HEALING_FAILURES: 'healing.failures',
+  HEALING_DURATION: 'healing.duration',
+  
   // Error metrics
   ERROR_COUNT: 'error.count',
   ERROR_RATE: 'error.rate',
 } as const;
+
+
 

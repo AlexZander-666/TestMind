@@ -155,8 +155,14 @@ export class SemanticIndexer {
    * For MVP: Simple text matching + future vector search
    * Economic rationale: Avoid upfront embedding cost, generate on-demand
    */
-  async search(query: string, k = 5): Promise<SemanticSearchResult[]> {
-    console.log(`[SemanticIndexer] Searching: "${query}" (k=${k})`);
+  async search(
+    query: string,
+    options?: { topK?: number; minScore?: number }
+  ): Promise<SemanticSearchResult[]> {
+    const k = options?.topK || 5;
+    const minScore = options?.minScore || 0;
+
+    console.log(`[SemanticIndexer] Searching: "${query}" (k=${k}, minScore=${minScore})`);
 
     // For MVP: Use simple keyword matching
     // Future: Use vector similarity search with LanceDB
@@ -165,7 +171,7 @@ export class SemanticIndexer {
     const queryLower = query.toLowerCase();
     const scoredChunks = this.codeChunks.map((chunk) => {
       const contentLower = chunk.content.toLowerCase();
-      const nameLower = chunk.metadata.name.toLowerCase();
+      const nameLower = chunk.metadata.name?.toLowerCase() || '';
       
       // Simple relevance score (keyword matching)
       let score = 0;
@@ -180,7 +186,7 @@ export class SemanticIndexer {
 
     // Sort by score and take top k
     const topK = scoredChunks
-      .filter((s) => s.score > 0)
+      .filter((s) => s.score > minScore)
       .sort((a, b) => b.score - a.score)
       .slice(0, k);
 
@@ -194,6 +200,25 @@ export class SemanticIndexer {
 
     console.log(`[SemanticIndexer] Found ${results.length} results`);
     return results;
+  }
+
+  /**
+   * Get a specific function from the index
+   */
+  async getFunction(filePath: string, functionName: string): Promise<CodeChunk | null> {
+    const fileChunks = this.chunkIndex.get(filePath);
+    
+    if (!fileChunks) {
+      return null;
+    }
+
+    const functionChunk = fileChunks.find(
+      (chunk) => 
+        chunk.metadata.type === 'function' &&
+        chunk.metadata.name === functionName
+    );
+
+    return functionChunk || null;
   }
 
   /**

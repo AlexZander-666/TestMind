@@ -137,6 +137,134 @@ export class TestGenerator {
   }
 
   /**
+   * Generate tests for multiple functions in batch (parallel processing)
+   * @param contexts Array of function contexts to generate tests for
+   * @param projectId Project identifier
+   * @param framework Test framework to use
+   * @param maxParallel Maximum number of parallel generations (default: 3)
+   * @returns Array of test suites and generation results
+   */
+  async generateBatch(
+    contexts: FunctionContext[],
+    projectId: string,
+    framework: TestFramework = 'jest',
+    maxParallel: number = 3
+  ): Promise<Array<{ context: FunctionContext; suite?: TestSuite; error?: Error }>> {
+    const startTime = Date.now();
+    
+    this.logger.info('Starting batch test generation', {
+      count: contexts.length,
+      framework,
+      maxParallel,
+      operation: 'generateBatch'
+    });
+
+    const results: Array<{ context: FunctionContext; suite?: TestSuite; error?: Error }> = [];
+    const queue = [...contexts];
+    const inProgress = new Set<Promise<void>>();
+
+    // Process contexts in parallel with concurrency limit
+    while (queue.length > 0 || inProgress.size > 0) {
+      // Fill up to maxParallel concurrent requests
+      while (inProgress.size < maxParallel && queue.length > 0) {
+        const context = queue.shift()!;
+        
+        const task = this.generateUnitTest(context, projectId, framework)
+          .then(suite => {
+            results.push({ context, suite });
+            this.logger.debug('Batch item completed', {
+              functionName: context.signature.name,
+              progress: `${results.length}/${contexts.length}`
+            });
+          })
+          .catch(error => {
+            results.push({ context, error: error as Error });
+            this.logger.warn('Batch item failed', {
+              functionName: context.signature.name,
+              error: (error as Error).message
+            });
+          })
+          .finally(() => {
+            inProgress.delete(task);
+          });
+        
+        inProgress.add(task);
+      }
+
+      // Wait for at least one to complete
+      if (inProgress.size > 0) {
+        await Promise.race(inProgress);
+      }
+    }
+
+    const duration = Date.now() - startTime;
+    const successful = results.filter(r => r.suite).length;
+    const failed = results.filter(r => r.error).length;
+
+    this.logger.info('Batch generation completed', {
+      total: contexts.length,
+      successful,
+      failed,
+      successRate: `${((successful / contexts.length) * 100).toFixed(1)}%`,
+      duration,
+      avgPerTest: Math.round(duration / contexts.length),
+      operation: 'generateBatch'
+    });
+
+    metrics.incrementCounter(MetricNames.TEST_GENERATION_COUNT, successful, { 
+      framework,
+      batch: true 
+    });
+    metrics.recordHistogram(MetricNames.TEST_GENERATION_DURATION, duration, { 
+      framework,
+      batch: true,
+      count: contexts.length
+    });
+
+    return results;
+  }
+
+  /**
+   * Generate tests for an entire file (all functions in the file)
+   * @param filePath Path to the source file
+   * @param contexts All function contexts from the file
+   * @param projectId Project identifier  
+   * @param framework Test framework to use
+   * @returns Batch generation results
+   */
+  async generateFileTests(
+    filePath: string,
+    contexts: FunctionContext[],
+    projectId: string,
+    framework: TestFramework = 'jest'
+  ): Promise<{
+    filePath: string;
+    testFilePath: string;
+    results: Array<{ context: FunctionContext; suite?: TestSuite; error?: Error }>;
+    successRate: number;
+  }> {
+    this.logger.info('Generating tests for entire file', {
+      filePath,
+      functionCount: contexts.length,
+      framework,
+      operation: 'generateFileTests'
+    });
+
+    const results = await this.generateBatch(contexts, projectId, framework);
+    
+    const testFilePath = this.generateTestFilePath(filePath);
+    const successful = results.filter(r => r.suite).length;
+    const successRate = (successful / contexts.length) * 100;
+
+    return {
+      filePath,
+      testFilePath,
+      results,
+      successRate
+    };
+  }
+
+  /**
    * Generate integration test for a module
    */
   async generateIntegrationTest(

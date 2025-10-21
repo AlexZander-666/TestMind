@@ -23,7 +23,7 @@ async function testAPIConnection() {
       model: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
       prompt: 'Say "Hello TestMind!" in exactly 3 words.',
       temperature: 0.1,
-      maxTokens: 100
+      maxTokens: 10000
     });
 
     const duration = Date.now() - startTime;
