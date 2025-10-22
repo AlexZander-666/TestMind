@@ -375,10 +375,18 @@ export interface CodeChunk {
   endLine: number;
   embedding?: number[];
   functionName?: string;
-  imports?: string[];
-  exports?: string[];
-  dependencies?: string[];
   metadata?: ChunkMetadata;
+  
+  // v0.6.0: Additional properties for enhanced features
+  name?: string;           // Function/class name (alias for functionName)
+  type?: 'function' | 'class' | 'module' | 'method';  // Chunk type
+  complexity?: number;     // Cyclomatic complexity
+  loc?: number;            // Lines of code
+  parameters?: string[];   // Function parameters
+  returnType?: string;     // Return type annotation
+  imports?: string[];      // Import statements
+  exports?: string[];      // Export statements
+  dependencies?: string[]; // Dependencies
 }
 
 export interface ChunkMetadata {
@@ -388,12 +396,19 @@ export interface ChunkMetadata {
   testQuality?: number;
   language?: ProgrammingLanguage;
   lastModified?: Date | string;
+  
+  // v0.6.0: Additional metadata
+  documentation?: string;  // JSDoc or comments
+  complexity?: number;     // Cyclomatic complexity (also at chunk level)
+  isPublic?: boolean;      // Is this a public API
+  callSites?: string[];    // Where this is called
+  recentlyModified?: boolean;  // Modified in last N days
 }
 
 export interface SemanticSearchResult {
   chunk: CodeChunk;
   score: number;
-  relevance: number;
+  relevance: number;  // Semantic relevance score (same as score for backward compatibility)
 }
 
 // ============================================================================
@@ -454,7 +469,16 @@ export class EvaluationError extends TestMindError {
 // Skill Framework Types
 // ============================================================================
 
-export * from './skill';
+export type {
+  TestSkill,
+  SkillMetadata,
+  TestContext,
+  ValidationResult,
+  ImprovementSuggestion,
+  SkillContext,
+  SkillLoadOptions,
+  TestFramework as SkillTestFramework
+} from './skill';
 
 
 

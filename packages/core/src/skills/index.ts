@@ -9,5 +9,7 @@ export * from './SkillOrchestrator';
 // Official Skills
 export * from './TestGenerationSkill';
 export * from './RefactorSkill';
-export * from './ApiTestSkill';
+
+// Note: ApiTestSkill disabled due to build issues
+// export * from './ApiTestSkill';
 

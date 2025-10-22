@@ -11,7 +11,7 @@
  */
 
 import type { LLMService } from '../llm/LLMService';
-import { Skill, type SkillContext, type SkillResult } from './Skill';
+import type { Skill, SkillContext, SkillResult } from './Skill';
 
 export interface ApiEndpoint {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';

@@ -2,6 +2,59 @@
 
 All notable changes to TestMind will be documented in this file.
 
+## [0.6.0-alpha] - 2025-10-21
+
+### 🎉 Major Features - 自愈引擎深化（阶段3）
+
+#### 五级定位器策略
+- **NEW**: IdLocator - 基于ID属性的定位（data-testid, data-cy, data-pw, id, name）
+- **NEW**: CssSelectorLocator - 基于CSS选择器的6级降级策略
+- **NEW**: XPathLocator - 基于XPath的智能定位（相对路径优先）
+- **NEW**: VisualLocator - 基于视觉特征的定位（位置+大小+颜色+文本）
+- **NEW**: SemanticLocator - 基于LLM的语义理解定位
+
+#### 失败分类器增强
+- **IMPROVED**: 失败模式从9个扩展到38个
+  - 环境问题：10个（网络6个 + 服务4个）
+  - 超时问题：5个
+  - 选择器问题：8个
+  - 断言问题：6个
+  - 异步问题：5个
+  - 类型错误：4个
+
+#### 智能Flaky检测
+- **NEW**: 历史成功率分析（0.5-0.95范围检测）
+- **NEW**: 时序模式检测（凌晨失败检测）
+- **NEW**: 交替模式检测（通过-失败-通过模式）
+- **NEW**: 执行时间波动检测（标准差分析）
+- **NEW**: Flakiness评分系统（0-1综合评分）
+
+### 📊 技术指标
+
+- ✅ 定位器策略：0 → 5个
+- ✅ 失败模式：9 → 38个 (+29)
+- ✅ Flaky检测：基础 → 智能4策略
+- ✅ 新增代码：~2,360行
+
+### 🔧 改进
+
+- **定位器置信度系统**: 0-1评分，智能决策
+- **瀑布式降级**: 5级策略自动降级
+- **LLM集成**: SemanticLocator支持自然语言意图
+
+### 📝 文档
+
+- **NEW**: `SHANNON_VALIDATION_v2.md` - Shannon项目验证报告
+- **NEW**: `TECHNICAL_IMPROVEMENTS_PHASE3.md` - 阶段3技术总结
+- **NEW**: `TESTMIND_BUG_FIXES_LOG.md` - Bug修复日志
+
+### 🎯 兼容性
+
+- Node.js: 20+ (无变化)
+- TypeScript: 5.3+ (无变化)
+
+---
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 

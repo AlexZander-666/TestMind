@@ -24,6 +24,7 @@ import { promises as fs } from 'fs';
 import fg from 'fast-glob';
 import path from 'path';
 import { FileCache } from '../utils/FileCache';
+import { ParallelProcessor } from '../utils/ParallelProcessor';
 import { createComponentLogger } from '../utils/logger';
 import { metrics, MetricNames } from '../utils/metrics';
 
@@ -37,6 +38,7 @@ export class StaticAnalyzer {
   private tsParser: Parser;
   private jsParser: Parser;
   private fileCache: FileCache;
+  private parallelProcessor: ParallelProcessor;
   private logger = createComponentLogger('StaticAnalyzer');
 
   constructor(private config: ProjectConfig, fileCache?: FileCache) {
@@ -51,7 +53,13 @@ export class StaticAnalyzer {
     // Initialize file cache (use provided instance or create new one)
     this.fileCache = fileCache || new FileCache();
     
-    this.logger.debug('StaticAnalyzer initialized');
+    // Initialize parallel processor (CPU-bound tasks)
+    const concurrency = ParallelProcessor.getRecommendedConcurrency('cpu-bound');
+    this.parallelProcessor = new ParallelProcessor(concurrency);
+    
+    this.logger.debug('StaticAnalyzer initialized', { 
+      concurrency 
+    });
   }
 
   /**
@@ -86,37 +94,47 @@ export class StaticAnalyzer {
       sampleFiles: files.slice(0, 3)
     });
 
-    // Analyze files in parallel
+    // Analyze files in parallel using ParallelProcessor
     const analyzedFiles: CodeFile[] = [];
     let totalFunctions = 0;
     let totalClasses = 0;
 
-    // Process files in batches to avoid overwhelming the system
-    const batchSize = 10;
-    for (let i = 0; i < files.length; i += batchSize) {
-      const batch = files.slice(i, i + batchSize);
-      const batchResults = await Promise.all(
-        batch.map(async (file) => {
-          try {
-            const absolutePath = path.join(projectPath, file);
-            return await this.analyzeFile(absolutePath);
-          } catch (error: any) {
-            this.logger.warn(`Failed to analyze ${file}`, { 
-              file, 
-              error: error.message 
-            });
-            metrics.incrementCounter('analysis.file_errors', 1, { file });
-            return null;
-          }
-        })
-      );
-
-      for (const result of batchResults) {
-        if (result) {
-          analyzedFiles.push(result);
-          totalFunctions += result.astData.functions.length;
-          totalClasses += result.astData.classes.length;
+    let processedCount = 0;
+    const results = await this.parallelProcessor.map(
+      files,
+      async (file, index) => {
+        try {
+          const absolutePath = path.join(projectPath, file);
+          return await this.analyzeFile(absolutePath);
+        } catch (error: any) {
+          this.logger.warn(`Failed to analyze ${file}`, { 
+            file, 
+            error: error.message 
+          });
+          metrics.incrementCounter('analysis.file_errors', 1, { file });
+          return null;
         }
+      },
+      {
+        onProgress: (completed, total) => {
+          if (completed % 10 === 0 || completed === total) {
+            this.logger.debug('Analysis progress', { 
+              completed, 
+              total,
+              percentage: ((completed / total) * 100).toFixed(1) + '%'
+            });
+          }
+        },
+        retryOnError: true,
+        maxRetries: 2,
+      }
+    );
+
+    for (const result of results) {
+      if (result) {
+        analyzedFiles.push(result);
+        totalFunctions += result.astData.functions.length;
+        totalClasses += result.astData.classes.length;
       }
     }
 

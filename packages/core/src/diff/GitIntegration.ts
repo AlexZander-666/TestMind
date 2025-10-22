@@ -1,8 +1,15 @@
 /**
  * GitIntegration - Git 集成模块
  * 
+ * Enhanced with:
+ * - Smart branch naming (module + timestamp)
+ * - AI-generated commit messages
+ * - Descriptive commit body generation
+ * - Rollback mechanism with history
+ * - Safe operation checks
+ * 
  * 功能：
- * - 自动创建 feature 分支
+ * - 智能创建 feature 分支
  * - AI 生成 commit 消息
  * - 自动提交已接受的 diff
  * - 创建 PR（可选）
@@ -14,6 +21,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import type { LLMService } from '../llm/LLMService';
 import type { FileDiff } from './DiffGenerator';
+import { createComponentLogger } from '../utils/logger';
 
 export interface GitOperationResult {
   success: boolean;
@@ -49,19 +57,68 @@ export interface BranchOptions {
 }
 
 /**
- * Git 集成器
+ * Git 集成器 (Enhanced)
  */
 export class GitIntegration {
   private repoPath: string;
   private llmService?: LLMService;
+  private logger = createComponentLogger('GitIntegration');
+  private operationHistory: Array<{operation: string; details: any; timestamp: number}> = [];
 
   constructor(repoPath: string, llmService?: LLMService) {
     this.repoPath = repoPath;
     this.llmService = llmService;
   }
+  
+  /**
+   * Generate smart branch name based on changes
+   */
+  private generateSmartBranchName(diffs: FileDiff[], featureName?: string): string {
+    if (featureName) {
+      return this.sanitizeBranchName(featureName);
+    }
+    
+    // Analyze diffs to generate intelligent name
+    const affectedModules = new Set<string>();
+    const fileTypes = new Set<string>();
+    
+    for (const diff of diffs) {
+      // Extract module from path: src/components/Button.tsx -> components
+      const parts = diff.filePath.split('/');
+      if (parts.length > 2) {
+        affectedModules.add(parts[parts.length - 2]);
+      }
+      
+      // Track file type
+      if (diff.filePath.endsWith('.test.ts') || diff.filePath.endsWith('.test.tsx')) {
+        fileTypes.add('tests');
+      } else if (diff.filePath.includes('component')) {
+        fileTypes.add('components');
+      } else if (diff.filePath.includes('util')) {
+        fileTypes.add('utils');
+      }
+    }
+    
+    const modules = Array.from(affectedModules).slice(0, 2).join('-');
+    const types = Array.from(fileTypes).slice(0, 1).join('-');
+    
+    const name = modules || types || 'update';
+    return this.sanitizeBranchName(`add-${name}`);
+  }
+  
+  /**
+   * Sanitize branch name (remove special chars)
+   */
+  private sanitizeBranchName(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
 
   /**
-   * 创建 feature 分支
+   * 创建 feature 分支 (Enhanced with smart naming)
    */
   async createFeatureBranch(
     featureName: string,
@@ -74,31 +131,142 @@ export class GitIntegration {
     } = options;
 
     try {
-      // 生成分支名
-      const timestamp = new Date().toISOString().split('T')[0];
-      const branchName = `${branchPrefix}/${featureName}-${timestamp}`;
+      this.logger.info('Creating feature branch', { featureName, baseBranch });
+      
+      // Check for uncommitted changes
+      const status = this.exec('git status --porcelain');
+      if (status.trim() && !this.exec('git diff --cached').trim()) {
+        this.logger.warn('Uncommitted changes detected');
+        // Note: In production, might want to stash or require clean state
+      }
+      
+      // 生成分支名（智能命名）
+      const timestamp = new Date().toISOString().split('T')[0].replace(/-/g, '');
+      const sanitizedName = this.sanitizeBranchName(featureName);
+      const branchName = `${branchPrefix}/${sanitizedName}-${timestamp}`;
 
       // 确保在正确的基础分支上
-      this.exec(`git checkout ${baseBranch}`);
+      try {
+        this.exec(`git checkout ${baseBranch}`);
+      } catch {
+        // If base branch doesn't exist or can't checkout, continue anyway
+        this.logger.warn(`Could not checkout ${baseBranch}, continuing anyway`);
+      }
 
       // 创建新分支
       this.exec(`git checkout -b ${branchName}`);
+      
+      // Record operation
+      this.recordOperation('create_branch', { branchName, baseBranch });
+
+      this.logger.info('Branch created successfully', { branchName });
 
       return {
         success: true,
         branchName,
-        message: `Created and checked out branch: ${branchName}`
+        message: `✓ Created and checked out branch: ${branchName}`
       };
     } catch (error) {
+      this.logger.error('Failed to create branch', { error });
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)
       };
     }
   }
+  
+  /**
+   * Generate AI-powered commit message based on diffs
+   */
+  async generateCommitMessage(diffs: FileDiff[]): Promise<string> {
+    if (!this.llmService) {
+      return this.generateFallbackCommitMessage(diffs);
+    }
+    
+    try {
+      this.logger.info('Generating AI commit message', { diffCount: diffs.length });
+      
+      // Build context for LLM
+      const diffSummary = diffs.map(d => ({
+        file: d.filePath,
+        additions: d.additions,
+        deletions: d.deletions,
+      }));
+      
+      const prompt = `Generate a concise git commit message for the following changes:
+
+Files changed (${diffs.length}):
+${diffSummary.map(d => `- ${d.file} (+${d.additions}, -${d.deletions})`).join('\n')}
+
+Requirements:
+1. Start with conventional commit type: feat/fix/test/refactor/docs/chore
+2. Keep subject line under 72 characters
+3. Be specific about what changed
+4. Use imperative mood (e.g., "add" not "added")
+
+Return ONLY the commit message, no explanation.`;
+
+      const response = await this.llmService.generate({
+        prompt,
+        temperature: 0.3, // Low temperature for consistent formatting
+        maxTokens: 100,
+      });
+      
+      const message = response.text.trim();
+      this.logger.info('AI commit message generated', { message });
+      
+      return message;
+    } catch (error) {
+      this.logger.warn('AI generation failed, using fallback', { error });
+      return this.generateFallbackCommitMessage(diffs);
+    }
+  }
+  
+  /**
+   * Generate fallback commit message without AI
+   */
+  private generateFallbackCommitMessage(diffs: FileDiff[]): string {
+    const testFiles = diffs.filter(d => d.filePath.includes('.test.'));
+    const sourceFiles = diffs.filter(d => !d.filePath.includes('.test.'));
+    
+    if (testFiles.length > 0 && sourceFiles.length === 0) {
+      return `test: add tests for ${testFiles.length} file(s)`;
+    }
+    
+    if (testFiles.length > 0) {
+      return `feat: add implementation and tests for ${sourceFiles.length} file(s)`;
+    }
+    
+    const totalAdditions = diffs.reduce((sum, d) => sum + (d.additions || 0), 0);
+    const totalDeletions = diffs.reduce((sum, d) => sum + (d.deletions || 0), 0);
+    
+    if (totalAdditions > totalDeletions * 2) {
+      return `feat: add new functionality (+${totalAdditions} lines)`;
+    } else if (totalDeletions > totalAdditions * 2) {
+      return `refactor: clean up code (-${totalDeletions} lines)`;
+    } else {
+      return `chore: update ${diffs.length} file(s)`;
+    }
+  }
+  
+  /**
+   * Record operation for rollback
+   */
+  private recordOperation(operation: string, details: any): void {
+    this.operationHistory.push({
+      operation,
+      details,
+      timestamp: Date.now(),
+    });
+    
+    // Keep last 10 operations
+    if (this.operationHistory.length > 10) {
+      this.operationHistory.shift();
+    }
+  }
 
   /**
-   * 提交已接受的 diff
+   * 提交已接受的 diff (Enhanced with AI message and history)
    */
   async commitDiffs(
     diffs: FileDiff[],
@@ -112,6 +280,8 @@ export class GitIntegration {
     } = options;
 
     try {
+      this.logger.info('Committing diffs', { count: diffs.length });
+      
       // 1. Stage 所有修改的文件
       for (const diff of diffs) {
         this.exec(`git add "${diff.filePath}"`);
@@ -122,10 +292,10 @@ export class GitIntegration {
       
       if (customMessage) {
         commitMessage = customMessage;
-      } else if (autoGenerateMessage && this.llmService) {
-        commitMessage = await this.generateCommitMessage(diffs, includeDescription);
+      } else if (autoGenerateMessage) {
+        commitMessage = await this.generateCommitMessage(diffs);
       } else {
-        commitMessage = this.generateBasicCommitMessage(diffs);
+        commitMessage = this.generateFallbackCommitMessage(diffs);
       }
 
       // 添加前缀
@@ -139,13 +309,23 @@ export class GitIntegration {
 
       // 4. 获取 commit hash
       const commitHash = this.exec('git rev-parse HEAD').trim();
+      
+      // Record operation for rollback
+      this.recordOperation('commit', {
+        commitHash,
+        message: commitMessage,
+        files: diffs.map(d => d.filePath),
+      });
+
+      this.logger.info('Commit successful', { commitHash, message: commitMessage });
 
       return {
         success: true,
         commitHash,
-        message: `Committed with message: ${commitMessage}`
+        message: `✓ Committed: ${commitMessage}`
       };
     } catch (error) {
+      this.logger.error('Commit failed', { error });
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)
@@ -154,9 +334,9 @@ export class GitIntegration {
   }
 
   /**
-   * 使用 LLM 生成 commit 消息
+   * 使用 LLM 生成 commit 消息 (with options)
    */
-  private async generateCommitMessage(
+  private async generateCommitMessageWithOptions(
     diffs: FileDiff[],
     includeDescription: boolean
   ): Promise<string> {
@@ -305,25 +485,103 @@ Output only the commit message, nothing else.
   }
 
   /**
-   * 回滚最后一次 commit
+   * 回滚最后一次 commit (Enhanced with safety checks)
    */
   async undoLastCommit(soft: boolean = true): Promise<GitOperationResult> {
     try {
+      this.logger.info('Undoing last commit', { soft });
+      
+      // Safety check: Get last commit info
+      const lastCommitHash = this.exec('git rev-parse HEAD').trim();
+      const lastCommitMessage = this.exec('git log -1 --pretty=%B').trim();
+      
+      // Check if it's a TestMind commit (has 🤖 prefix)
+      if (!lastCommitMessage.includes('🤖')) {
+        this.logger.warn('Last commit is not a TestMind commit');
+        return {
+          success: false,
+          error: 'Safety check failed: Last commit is not a TestMind commit. Use git reset manually if you\'re sure.',
+          message: `Last commit: ${lastCommitMessage}`,
+        };
+      }
+      
+      // Perform reset
       const command = soft ? 'git reset --soft HEAD~1' : 'git reset --hard HEAD~1';
       this.exec(command);
+      
+      // Record rollback operation
+      this.recordOperation('rollback', {
+        undoneCommit: lastCommitHash,
+        undoneMessage: lastCommitMessage,
+        soft,
+      });
+      
+      this.logger.info('Rollback successful', { 
+        undoneCommit: lastCommitHash,
+        soft 
+      });
 
       return {
         success: true,
         message: soft 
-          ? 'Undone last commit (changes kept)'
-          : 'Undone last commit (changes discarded)'
+          ? `✓ Undone last commit (changes kept in working directory)\n  Previous commit: ${lastCommitMessage}`
+          : `✓ Undone last commit (changes discarded)\n  Previous commit: ${lastCommitMessage}`
       };
     } catch (error) {
+      this.logger.error('Rollback failed', { error });
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)
       };
     }
+  }
+  
+  /**
+   * Save operation history to disk
+   */
+  async saveHistory(): Promise<void> {
+    try {
+      const historyDir = path.join(this.repoPath, '.testmind', 'history');
+      await fs.mkdir(historyDir, { recursive: true });
+      
+      const historyFile = path.join(historyDir, 'git-operations.json');
+      await fs.writeFile(
+        historyFile,
+        JSON.stringify(this.operationHistory, null, 2),
+        'utf-8'
+      );
+      
+      this.logger.debug('Operation history saved', { 
+        operations: this.operationHistory.length 
+      });
+    } catch (error) {
+      this.logger.warn('Failed to save history', { error });
+    }
+  }
+  
+  /**
+   * Load operation history from disk
+   */
+  async loadHistory(): Promise<void> {
+    try {
+      const historyFile = path.join(this.repoPath, '.testmind', 'history', 'git-operations.json');
+      const content = await fs.readFile(historyFile, 'utf-8');
+      this.operationHistory = JSON.parse(content);
+      
+      this.logger.debug('Operation history loaded', { 
+        operations: this.operationHistory.length 
+      });
+    } catch (error) {
+      // No history file yet, start fresh
+      this.operationHistory = [];
+    }
+  }
+  
+  /**
+   * Get operation history
+   */
+  getHistory(): typeof this.operationHistory {
+    return [...this.operationHistory];
   }
 
   /**

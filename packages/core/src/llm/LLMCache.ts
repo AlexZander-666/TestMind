@@ -27,6 +27,8 @@ export interface CacheEntry {
     completionTokens: number;
     totalTokens: number;
   };
+  accessCount?: number; // Track frequency for adaptive TTL
+  lastAccessTime?: number;
 }
 
 export interface CacheStats {
@@ -49,6 +51,15 @@ export interface LLMCacheConfig {
   
   /** 持久化文件路径 */
   persistencePath?: string;
+  
+  /** 是否启用相似度匹配 */
+  enableSimilarityMatch?: boolean;
+  
+  /** 相似度阈值 (0-1) */
+  similarityThreshold?: number;
+  
+  /** 是否启用自适应TTL */
+  enableAdaptiveTTL?: boolean;
 }
 
 /**
@@ -59,6 +70,7 @@ export class LLMCache {
   private accessOrder: string[] = []; // LRU tracking
   private hits: number = 0;
   private misses: number = 0;
+  private similarityHits: number = 0; // Hits from similarity matching
   
   private config: Required<Omit<LLMCacheConfig, 'persistencePath'>>;
   private persistencePath?: string;
@@ -67,7 +79,10 @@ export class LLMCache {
     this.config = {
       maxSize: config.maxSize ?? 1000,
       maxAge: config.maxAge ?? 7 * 24 * 60 * 60 * 1000, // 7天
-      enablePersistence: config.enablePersistence ?? false
+      enablePersistence: config.enablePersistence ?? false,
+      enableSimilarityMatch: config.enableSimilarityMatch ?? true,
+      similarityThreshold: config.similarityThreshold ?? 0.85,
+      enableAdaptiveTTL: config.enableAdaptiveTTL ?? true,
     };
     
     this.persistencePath = config.persistencePath;
@@ -96,44 +111,74 @@ export class LLMCache {
    */
   get(prompt: string, provider: string, model: string): string | null {
     const key = this.generateKey(prompt, provider, model);
-    const entry = this.cache.get(key);
+    let entry = this.cache.get(key);
 
-    if (!entry) {
-      this.misses++;
+    // Exact match found
+    if (entry) {
+      // 检查是否过期（使用自适应TTL）
+      const maxAge = this.calculateAdaptiveTTL(entry);
+      const age = Date.now() - entry.timestamp;
+      
+      if (age > maxAge) {
+        this.cache.delete(key);
+        this.removeFromAccessOrder(key);
+        this.misses++;
+        metrics.incrementCounter(MetricNames.LLM_CALL_COUNT, 1, { 
+          cached: false,
+          expired: true,
+          provider,
+          model 
+        });
+        return null;
+      }
+
+      // Update access tracking
+      entry.accessCount = (entry.accessCount || 0) + 1;
+      entry.lastAccessTime = Date.now();
+      this.updateAccessOrder(key);
+
+      this.hits++;
       metrics.incrementCounter(MetricNames.LLM_CALL_COUNT, 1, { 
-        cached: false,
+        cached: true,
+        exactMatch: true,
         provider,
         model
       });
-      return null;
+
+      return entry.response;
     }
 
-    // 检查是否过期
-    const age = Date.now() - entry.timestamp;
-    if (age > this.config.maxAge) {
-      this.cache.delete(key);
-      this.removeFromAccessOrder(key);
-      this.misses++;
-      metrics.incrementCounter(MetricNames.LLM_CALL_COUNT, 1, { 
-        cached: false,
-        expired: true,
-        provider,
-        model 
-      });
-      return null;
+    // Try similarity matching if enabled
+    if (this.config.enableSimilarityMatch) {
+      const similarEntry = this.findSimilarEntry(prompt, provider, model);
+      
+      if (similarEntry) {
+        // Update access tracking
+        similarEntry.entry.accessCount = (similarEntry.entry.accessCount || 0) + 1;
+        similarEntry.entry.lastAccessTime = Date.now();
+        this.updateAccessOrder(similarEntry.key);
+
+        this.similarityHits++;
+        this.hits++;
+        metrics.incrementCounter(MetricNames.LLM_CALL_COUNT, 1, { 
+          cached: true,
+          similarityMatch: true,
+          similarity: similarEntry.similarity,
+          provider,
+          model
+        });
+
+        return similarEntry.entry.response;
+      }
     }
 
-    // 更新访问顺序（LRU）
-    this.updateAccessOrder(key);
-
-    this.hits++;
+    this.misses++;
     metrics.incrementCounter(MetricNames.LLM_CALL_COUNT, 1, { 
-      cached: true,
+      cached: false,
       provider,
       model
     });
-
-    return entry.response;
+    return null;
   }
 
   /**
@@ -159,7 +204,9 @@ export class LLMCache {
       timestamp: Date.now(),
       provider,
       model,
-      usage
+      usage,
+      accessCount: 1,
+      lastAccessTime: Date.now(),
     };
 
     this.cache.set(key, entry);
@@ -206,6 +253,90 @@ export class LLMCache {
   }
 
   /**
+   * Find similar cached entry using string similarity
+   * Uses Jaccard similarity for token-based matching
+   */
+  private findSimilarEntry(
+    prompt: string,
+    provider: string,
+    model: string
+  ): { key: string; entry: CacheEntry; similarity: number } | null {
+    let bestMatch: { key: string; entry: CacheEntry; similarity: number } | null = null;
+    let highestSimilarity = 0;
+
+    for (const [key, entry] of this.cache.entries()) {
+      // Only compare prompts from same provider and model
+      if (entry.provider !== provider || entry.model !== model) {
+        continue;
+      }
+
+      const similarity = this.calculatePromptSimilarity(prompt, entry.prompt);
+      
+      if (similarity >= this.config.similarityThreshold && similarity > highestSimilarity) {
+        highestSimilarity = similarity;
+        bestMatch = { key, entry, similarity };
+      }
+    }
+
+    return bestMatch;
+  }
+
+  /**
+   * Calculate similarity between two prompts using Jaccard similarity
+   * Returns value between 0 (no similarity) and 1 (identical)
+   */
+  private calculatePromptSimilarity(prompt1: string, prompt2: string): number {
+    // Tokenize prompts (split by whitespace and punctuation)
+    const tokenize = (text: string): Set<string> => {
+      const tokens = text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, ' ')
+        .split(/\s+/)
+        .filter(t => t.length > 2); // Ignore very short tokens
+      return new Set(tokens);
+    };
+
+    const tokens1 = tokenize(prompt1);
+    const tokens2 = tokenize(prompt2);
+
+    // Calculate Jaccard similarity: |intersection| / |union|
+    const intersection = new Set([...tokens1].filter(t => tokens2.has(t)));
+    const union = new Set([...tokens1, ...tokens2]);
+
+    if (union.size === 0) return 0;
+    
+    return intersection.size / union.size;
+  }
+
+  /**
+   * Calculate adaptive TTL based on access frequency
+   * High-frequency items get longer TTL, low-frequency get shorter TTL
+   */
+  private calculateAdaptiveTTL(entry: CacheEntry): number {
+    if (!this.config.enableAdaptiveTTL) {
+      return this.config.maxAge;
+    }
+
+    const accessCount = entry.accessCount || 1;
+    const baseAge = this.config.maxAge;
+
+    // Frequency tiers
+    if (accessCount >= 10) {
+      // High frequency: 2x TTL
+      return baseAge * 2;
+    } else if (accessCount >= 5) {
+      // Medium frequency: 1.5x TTL
+      return baseAge * 1.5;
+    } else if (accessCount >= 2) {
+      // Low frequency: 1x TTL
+      return baseAge;
+    } else {
+      // Very low frequency: 0.5x TTL
+      return baseAge * 0.5;
+    }
+  }
+
+  /**
    * 清除缓存
    */
   clear(): void {
@@ -241,16 +372,19 @@ export class LLMCache {
   /**
    * 获取缓存统计
    */
-  getStats(): CacheStats {
+  getStats(): CacheStats & { similarityHits?: number; exactHits?: number } {
     const total = this.hits + this.misses;
     const hitRate = total > 0 ? this.hits / total : 0;
+    const exactHits = this.hits - this.similarityHits;
 
     return {
       size: this.cache.size,
       hits: this.hits,
       misses: this.misses,
       hitRate,
-      totalSaved: this.hits
+      totalSaved: this.hits,
+      similarityHits: this.similarityHits,
+      exactHits,
     };
   }
 
@@ -260,6 +394,7 @@ export class LLMCache {
   resetStats(): void {
     this.hits = 0;
     this.misses = 0;
+    this.similarityHits = 0;
   }
 
   /**
@@ -347,10 +482,14 @@ export class LLMCache {
 
 /**
  * 全局LLM缓存实例
+ * Enhanced with similarity matching and adaptive TTL
  */
 export const llmCache = new LLMCache({
   maxSize: 1000,
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7天
-  enablePersistence: true
+  enablePersistence: true,
+  enableSimilarityMatch: true, // Enable fuzzy cache matching
+  similarityThreshold: 0.85, // 85% similarity required
+  enableAdaptiveTTL: true, // High-frequency items get longer TTL
 });
 

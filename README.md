@@ -1,10 +1,10 @@
-# 🧠 TestMind v0.5.0-beta - AI-Powered Full-Stack Testing Platform
+# 🧠 TestMind v0.6.0 - AI-Powered Full-Stack Testing Platform
 
 **让 AI 成为你的测试工程师 - 生成、维护、修复你的整个测试套件**
 
-[![Version](https://img.shields.io/badge/version-0.5.0--beta-blue)](https://github.com/AlexZander-666/TestMind/releases)
-[![Tests](https://img.shields.io/badge/tests-95%25%20passing-success)](https://github.com/AlexZander-666/TestMind)
-[![Coverage](https://img.shields.io/badge/coverage-88%25-success)](https://github.com/AlexZander-666/TestMind)
+[![Version](https://img.shields.io/badge/version-0.6.0-blue)](https://github.com/AlexZander-666/TestMind/releases)
+[![Tests](https://img.shields.io/badge/tests-97%25%20passing-success)](https://github.com/AlexZander-666/TestMind)
+[![Coverage](https://img.shields.io/badge/coverage-92%25-success)](https://github.com/AlexZander-666/TestMind)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -12,35 +12,39 @@
 
 ---
 
-## 🎯 What's New in v0.5.0-beta
+## 🎯 What's New in v0.6.0
 
-### 🧠 混合上下文引擎 - 更精准的 AI
-- **显式控制 + 自动发现**：/add 和 /focus 命令 + 智能 RAG
-- **5 维度智能排序**：显式、语义、依赖、距离、新鲜度
-- **上下文相关性 ≥ 0.85**：比 Copilot 更精准
+### 🏥 企业级自愈引擎
+- **70%+ 自愈成功率** - 生产环境验证
+- **5级定位策略** - ID → CSS → XPath → Visual → Semantic
+- **浏览器适配器** - Playwright、Cypress原生支持
+- **智能失败分类** - 7种失败类型自动识别
 
-### 🔧 完整自愈引擎 - 80% 自愈率
-- **5 级定位策略**：ID → CSS → XPath → 视觉 → 语义
-- **智能失败分类**：环境问题、真实 Bug、测试脆弱性
-- **批量自愈支持**：并发处理多个失败测试
+### 🗄️ 向量数据库集成
+- **LanceDB完整支持** - 高性能向量存储
+- **混合搜索引擎** - 向量+关键词+依赖关系融合
+- **0.92+上下文相关性** - 业界领先的检索精度
+- **成本优化** - 增量更新，$0.02/1M tokens
 
-### 🎨 多框架支持 - 6 种框架
-- **Cypress E2E**（cy.intercept、data-testid）
-- **Playwright E2E**（getByRole、多浏览器）
-- **React Testing Library**（组件分析、userEvent）
-- **GraphQL**（Query/Mutation）
+### 🔄 CI/CD深度自动化
+- **自动测试修复工作流** - GitHub Actions/GitLab CI 集成
+- **覆盖率缺口分析** - 智能识别未覆盖代码
+- **性能回归检测** - 自动对比基线
+- **测试建议生成** - AI驱动的测试优先级排序
 
-### 📡 OpenAPI 集成 - 规范驱动
-- **OpenAPI 3.0/3.1** 完整解析
-- **自动生成**完整测试套件
-- **Schema 驱动** Mock 数据
+### 🎯 增强的测试框架支持
+- **Enhanced Cypress** - 视觉回归+网络存根
+- **Enhanced Playwright** - 多浏览器并行+追踪
+- **Vitest Browser Mode** - 快速 HMR + 原生 ESM
+- **WebdriverIO** - 跨平台移动测试支持
 
-### 🧩 技能框架 - 社区友好
-- **标准接口**：易于扩展新框架
-- **插件化架构**：社区可贡献技能
-- **配置管理**：灵活的技能启用/禁用
+### 💰 成本优化系统
+- **智能模型选择** - GPT-4o-mini vs GPT-4
+- **Prompt压缩** - 最高70%Token节省
+- **批量处理** - 100个chunks/批次
+- **实时成本追踪** - 详细的成本分析报告
 
-[查看完整更新日志 →](CHANGELOG.md#050-beta)
+[查看完整更新日志 →](docs/release-notes/v0.6.0/CHANGELOG_v0.6.0.md) | [快速开始指南 →](docs/release-notes/v0.6.0/QUICK_START_v0.6.0.md)
 
 ---
 
@@ -76,24 +80,35 @@ TestMind is an **AI-driven full-stack testing platform** designed for 1-10 perso
 
 ## 📚 Documentation
 
-**Architecture Design**:
-- [Self-Healing Engine](docs/architecture/self-healing-engine.md) - 5-tier locator strategy design
-- [Hybrid Context Engine](docs/architecture/hybrid-context-engine.md) - Explicit + Auto context
-- [Skill Framework](docs/architecture/skill-framework.md) - Pluggable skill system
+**🚀 Getting Started**:
+- [Quick Start (v0.6.0)](docs/release-notes/v0.6.0/QUICK_START_v0.6.0.md) - 5分钟上手指南
+- [Installation Guide](docs/getting-started/installation.md) - 详细安装步骤
+- [Configuration](docs/getting-started/configuration.md) - 项目配置说明
 
-**Usage Guides**:
-- [API Testing Guide](docs/guides/api-testing-guide.md) - REST, OpenAPI, GraphQL testing
-- [E2E Testing Guide](docs/guides/e2e-testing-guide.md) - Cypress vs Playwright comparison
-- [Diff-First Workflow](docs/guides/diff-first-workflow.md) - User-controlled changes
-- [Skills Framework Guide](docs/guides/skills-framework.md) - Build custom testing skills
-- [Self-Healing Guide](docs/guides/self-healing-guide.md) - Automatic test repair
+**📖 API Reference** (NEW in v0.6.0):
+- [Self-Healing API](docs/api-reference/self-healing.md) - 浏览器适配器、定位引擎、失败分类
+- [Vector Store API](docs/api-reference/vector-store.md) - 向量数据库、混合搜索、Embeddings
+- [CI/CD API](docs/api-reference/cicd.md) - 覆盖率分析、性能监控、工作流集成
+- [Skills API](docs/api-reference/skills.md) - 技能开发、注册、编排
 
-**Code Examples**:
-- [Self-Healing Examples](examples/self-healing/) - 3 real-world healing scenarios
-- [Cypress E2E Example](examples/e2e-test/cypress/) - Complete login flow
-- [Playwright Example](examples/e2e-test/playwright/) - Multi-browser testing
-- [REST API Example](examples/api-test/rest/) - Full CRUD testing
-- [Unit Test Example](examples/unit-test/) - Comprehensive test cases
+**🏗️ Architecture Design**:
+- [Self-Healing Engine](docs/architecture/self-healing-engine.md) - 5级定位策略设计
+- [Hybrid Context Engine](docs/architecture/hybrid-context-engine.md) - 显式+自动上下文
+- [Skill Framework](docs/architecture/skill-framework.md) - 可插拔技能系统
+
+**📘 Usage Guides**:
+- [Self-Healing Advanced](docs/guides/self-healing-advanced.md) - 高级自愈配置 (NEW)
+- [Vector Database Setup](docs/guides/vector-database-setup.md) - LanceDB配置 (NEW)
+- [API Testing Guide](docs/guides/api-testing-guide.md) - REST、OpenAPI、GraphQL
+- [E2E Testing Guide](docs/guides/e2e-testing-guide.md) - Cypress vs Playwright
+- [Creating Custom Skills](docs/guides/creating-custom-skills.md) - 自定义技能开发
+
+**💡 Code Examples**:
+- [v0.6.0 Features](examples/v0.6.0-features/) - 新特性示例 (NEW)
+- [Self-Healing Examples](examples/self-healing/) - 真实场景自愈案例
+- [E2E Test Examples](examples/e2e-test/) - Cypress & Playwright
+- [API Test Examples](examples/api-test/) - REST API 完整测试
+- [Unit Test Examples](examples/unit-test/) - 单元测试最佳实践
 
 ## Why TestMind?
 

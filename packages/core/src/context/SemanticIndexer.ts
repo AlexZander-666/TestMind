@@ -150,10 +150,14 @@ export class SemanticIndexer {
   }
 
   /**
-   * Search for similar code
+   * Search for similar code with enhanced matching
    * 
-   * For MVP: Simple text matching + future vector search
-   * Economic rationale: Avoid upfront embedding cost, generate on-demand
+   * Strategy:
+   * 1. Fuzzy matching using Levenshtein distance
+   * 2. Token-based matching (handles camelCase)
+   * 3. Semantic expansion (synonyms)
+   * 
+   * Performance: 0.85 → 0.92 context relevance target
    */
   async search(
     query: string,
@@ -164,22 +168,59 @@ export class SemanticIndexer {
 
     console.log(`[SemanticIndexer] Searching: "${query}" (k=${k}, minScore=${minScore})`);
 
-    // For MVP: Use simple keyword matching
-    // Future: Use vector similarity search with LanceDB
     const results: SemanticSearchResult[] = [];
+    const queryTokens = this.tokenize(query);
+    const expandedQuery = this.expandQuery(query);
 
-    const queryLower = query.toLowerCase();
     const scoredChunks = this.codeChunks.map((chunk) => {
-      const contentLower = chunk.content.toLowerCase();
-      const nameLower = chunk.metadata.name?.toLowerCase() || '';
+      const name = chunk.metadata.name || '';
+      const content = chunk.content;
       
-      // Simple relevance score (keyword matching)
+      // Multi-factor scoring
       let score = 0;
-      if (nameLower.includes(queryLower)) score += 10;
-      if (contentLower.includes(queryLower)) score += 5;
       
-      // Bonus for high-quality chunks
+      // 1. Exact name match (highest weight)
+      if (name.toLowerCase() === query.toLowerCase()) {
+        score += 50;
+      }
+      
+      // 2. Fuzzy name match
+      const nameSimilarity = this.calculateFuzzyMatch(query, name);
+      if (nameSimilarity > 0.7) {
+        score += nameSimilarity * 20;
+      }
+      
+      // 3. Token-based matching (handles camelCase, snake_case)
+      const nameTokens = this.tokenize(name);
+      const contentTokens = this.tokenize(content);
+      
+      const nameTokenOverlap = this.calculateTokenOverlap(queryTokens, nameTokens);
+      const contentTokenOverlap = this.calculateTokenOverlap(queryTokens, contentTokens);
+      
+      score += nameTokenOverlap * 15;
+      score += contentTokenOverlap * 8;
+      
+      // 4. Semantic expansion matching (synonyms)
+      for (const synonym of expandedQuery) {
+        if (name.toLowerCase().includes(synonym)) {
+          score += 5;
+        }
+        if (content.toLowerCase().includes(synonym)) {
+          score += 2;
+        }
+      }
+      
+      // 5. Quality bonus
       if (chunk.metadata.hasTests) score += 3;
+      if (chunk.metadata.documentation) score += 2;
+      
+      // 6. Complexity penalty (prefer simpler examples)
+      const complexity = chunk.metadata.complexity || 0;
+      if (complexity < 5) {
+        score += 2; // Simple code is often better for examples
+      } else if (complexity > 15) {
+        score -= 2; // Complex code may be less helpful
+      }
       
       return { chunk, score };
     });
@@ -194,12 +235,130 @@ export class SemanticIndexer {
       results.push({
         chunk,
         score,
-        relevance: Math.min(1, score / 10),
+        relevance: Math.min(1, score / 50), // Normalize to 0-1
       });
     }
 
-    console.log(`[SemanticIndexer] Found ${results.length} results`);
+    console.log(`[SemanticIndexer] Found ${results.length} results`, {
+      topScore: results[0]?.score,
+      avgScore: results.length > 0 
+        ? (results.reduce((sum, r) => sum + r.score, 0) / results.length).toFixed(1)
+        : 0
+    });
+    
     return results;
+  }
+
+  /**
+   * Tokenize text (split by camelCase, snake_case, whitespace)
+   */
+  private tokenize(text: string): string[] {
+    return text
+      // Split camelCase: getUserName → get User Name
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      // Split by non-alphanumeric
+      .split(/[^a-zA-Z0-9]+/)
+      .map(t => t.toLowerCase())
+      .filter(t => t.length > 2); // Filter short tokens
+  }
+
+  /**
+   * Calculate token overlap (Jaccard similarity)
+   */
+  private calculateTokenOverlap(tokens1: string[], tokens2: string[]): number {
+    const set1 = new Set(tokens1);
+    const set2 = new Set(tokens2);
+    
+    const intersection = new Set([...set1].filter(t => set2.has(t)));
+    const union = new Set([...set1, ...set2]);
+    
+    if (union.size === 0) return 0;
+    return intersection.size / union.size;
+  }
+
+  /**
+   * Calculate fuzzy match using simplified Levenshtein distance
+   */
+  private calculateFuzzyMatch(str1: string, str2: string): number {
+    const s1 = str1.toLowerCase();
+    const s2 = str2.toLowerCase();
+    
+    // Quick checks
+    if (s1 === s2) return 1.0;
+    if (s1.length === 0 || s2.length === 0) return 0;
+    
+    // Simple substring matching for performance
+    if (s1.includes(s2) || s2.includes(s1)) {
+      const maxLen = Math.max(s1.length, s2.length);
+      const minLen = Math.min(s1.length, s2.length);
+      return minLen / maxLen * 0.9; // Slightly penalize partial matches
+    }
+    
+    // Levenshtein distance (optimized for short strings)
+    const matrix: number[][] = [];
+    
+    for (let i = 0; i <= s1.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= s2.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= s1.length; i++) {
+      for (let j = 1; j <= s2.length; j++) {
+        const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1, // Deletion
+          matrix[i][j - 1] + 1, // Insertion
+          matrix[i - 1][j - 1] + cost // Substitution
+        );
+      }
+    }
+    
+    const distance = matrix[s1.length][s2.length];
+    const maxLen = Math.max(s1.length, s2.length);
+    
+    return 1 - (distance / maxLen);
+  }
+
+  /**
+   * Expand query with synonyms and related terms
+   */
+  private expandQuery(query: string): string[] {
+    const expansions = new Set<string>();
+    const queryLower = query.toLowerCase();
+    
+    // Synonym dictionary for common testing terms
+    const synonyms: Record<string, string[]> = {
+      'test': ['spec', 'case', 'suite', 'check', 'verify'],
+      'mock': ['stub', 'fake', 'double', 'spy'],
+      'assert': ['expect', 'verify', 'check'],
+      'user': ['account', 'profile', 'member'],
+      'auth': ['authentication', 'login', 'signin', 'credential'],
+      'api': ['endpoint', 'service', 'request', 'response'],
+      'data': ['model', 'entity', 'record'],
+      'create': ['add', 'insert', 'new', 'make'],
+      'delete': ['remove', 'destroy', 'drop'],
+      'update': ['modify', 'change', 'edit', 'patch'],
+      'get': ['fetch', 'retrieve', 'load', 'find'],
+    };
+    
+    // Add original query
+    expansions.add(queryLower);
+    
+    // Add tokens
+    const tokens = this.tokenize(query);
+    tokens.forEach(token => expansions.add(token));
+    
+    // Add synonyms
+    tokens.forEach(token => {
+      if (synonyms[token]) {
+        synonyms[token].forEach(syn => expansions.add(syn));
+      }
+    });
+    
+    return Array.from(expansions);
   }
 
   /**

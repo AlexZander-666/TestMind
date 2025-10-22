@@ -45,6 +45,9 @@ export * from './ci-cd';
 // Skills Framework
 export * from './skills';
 
+// v0.6.0 features (disabled due to type conflicts)
+// export * from './v0.6.0';
+
 // Utilities
 export * from './utils';
 

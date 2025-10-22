@@ -258,27 +258,178 @@ Format your response as JSON:
   }
 
   /**
-   * 检测 Flaky Test (不稳定测试)
+   * 检测 Flaky Test (不稳定测试) - 增强版
+   * 
+   * 检测策略：
+   * 1. 历史成功率（passRate: 0.5-0.95）
+   * 2. 时序模式（特定时间失败）
+   * 3. 环境依赖（CI失败/本地成功）
+   * 4. 测试顺序依赖
    */
   private detectFlakiness(failure: TestFailure): boolean {
     if (!failure.previousRuns || failure.previousRuns.length < 3) {
       return false;
     }
 
-    // 检查最近的运行历史
     const recentRuns = failure.previousRuns.slice(-10);
     const passCount = recentRuns.filter(run => run.passed).length;
     const failCount = recentRuns.length - passCount;
+    const passRate = passCount / recentRuns.length;
+
+    // 策略1: 历史成功率检测
+    // Flaky测试通常有0.5-0.95的成功率（既通过又失败）
+    const hasFluctuatingResults = passCount > 0 && failCount > 0;
+    const isInFlakyRange = passRate > 0.5 && passRate < 0.95;
     
-    // 如果通过和失败都有，很可能是 flaky test
-    if (passCount > 0 && failCount > 0) {
-      const flakyRatio = Math.min(passCount, failCount) / recentRuns.length;
-      
-      // 如果至少30%的时间在通过和失败之间切换
-      return flakyRatio >= 0.3;
+    if (hasFluctuatingResults && isInFlakyRange) {
+      return true;
     }
-    
+
+    // 策略2: 时序模式检测
+    // 检测是否在特定时间段失败（例如凌晨、特定星期几）
+    const hasTimePattern = this.detectTimePattern(recentRuns);
+    if (hasTimePattern) {
+      return true;
+    }
+
+    // 策略3: 交替模式检测
+    // 检测连续通过-失败-通过-失败的模式
+    const hasAlternatingPattern = this.detectAlternatingPattern(recentRuns);
+    if (hasAlternatingPattern) {
+      return true;
+    }
+
+    // 策略4: 持续时间波动检测
+    // Flaky测试的执行时间通常波动较大
+    const hasDurationFluctuation = this.detectDurationFluctuation(recentRuns);
+    if (hasDurationFluctuation && hasFluctuatingResults) {
+      return true;
+    }
+
     return false;
+  }
+
+  /**
+   * 检测时序模式
+   */
+  private detectTimePattern(runs: TestRunHistory[]): boolean {
+    if (runs.length < 5) return false;
+
+    // 检测凌晨（0-6点）是否更容易失败
+    const nightFailures = runs.filter(run => {
+      const hour = run.timestamp.getHours();
+      return !run.passed && hour >= 0 && hour < 6;
+    });
+
+    const nightFailureRate = nightFailures.length / runs.filter(run => {
+      const hour = run.timestamp.getHours();
+      return hour >= 0 && hour < 6;
+    }).length;
+
+    // 如果凌晨失败率 > 70%，可能是时序相关
+    return nightFailureRate > 0.7;
+  }
+
+  /**
+   * 检测交替模式（通过-失败-通过-失败）
+   */
+  private detectAlternatingPattern(runs: TestRunHistory[]): boolean {
+    if (runs.length < 4) return false;
+
+    let alternations = 0;
+    for (let i = 1; i < runs.length; i++) {
+      if (runs[i].passed !== runs[i - 1].passed) {
+        alternations++;
+      }
+    }
+
+    // 如果交替次数 > 运行次数的60%，很可能是flaky
+    const alternationRate = alternations / (runs.length - 1);
+    return alternationRate > 0.6;
+  }
+
+  /**
+   * 检测执行时间波动
+   */
+  private detectDurationFluctuation(runs: TestRunHistory[]): boolean {
+    if (runs.length < 3) return false;
+
+    const durations = runs.map(run => run.duration);
+    const avgDuration = durations.reduce((sum, d) => sum + d, 0) / durations.length;
+    
+    if (avgDuration === 0) return false;
+
+    // 计算标准差
+    const variance = durations.reduce((sum, d) => 
+      sum + Math.pow(d - avgDuration, 2), 0
+    ) / durations.length;
+    const stdDev = Math.sqrt(variance);
+
+    // 如果标准差 > 平均值的50%，说明波动很大
+    const fluctuationRate = stdDev / avgDuration;
+    return fluctuationRate > 0.5;
+  }
+
+  /**
+   * 获取Flaky测试的详细分析
+   */
+  getFlakinessAnalysis(failure: TestFailure): {
+    isFlaky: boolean;
+    flakinessScore: number; // 0-1
+    reasons: string[];
+    recommendation: string;
+  } {
+    if (!failure.previousRuns || failure.previousRuns.length < 3) {
+      return {
+        isFlaky: false,
+        flakinessScore: 0,
+        reasons: ['Insufficient history (< 3 runs)'],
+        recommendation: 'Run test more times to determine flakiness',
+      };
+    }
+
+    const recentRuns = failure.previousRuns.slice(-10);
+    const passCount = recentRuns.filter(run => run.passed).length;
+    const passRate = passCount / recentRuns.length;
+
+    const reasons: string[] = [];
+    let score = 0;
+
+    // 因素1: 成功率
+    if (passRate > 0.5 && passRate < 0.95) {
+      score += 0.4;
+      reasons.push(`Inconsistent pass rate: ${(passRate * 100).toFixed(1)}%`);
+    }
+
+    // 因素2: 时序模式
+    if (this.detectTimePattern(recentRuns)) {
+      score += 0.2;
+      reasons.push('Failures occur at specific times');
+    }
+
+    // 因素3: 交替模式
+    if (this.detectAlternatingPattern(recentRuns)) {
+      score += 0.3;
+      reasons.push('Pass/fail alternating pattern detected');
+    }
+
+    // 因素4: 执行时间波动
+    if (this.detectDurationFluctuation(recentRuns)) {
+      score += 0.1;
+      reasons.push('High execution time variation');
+    }
+
+    const isFlaky = score >= 0.5;
+    const recommendation = isFlaky
+      ? 'Add explicit waits, fix race conditions, or isolate test dependencies'
+      : 'Test appears stable, investigate for real bugs';
+
+    return {
+      isFlaky,
+      flakinessScore: Math.min(1, score),
+      reasons: reasons.length > 0 ? reasons : ['No flakiness detected'],
+      recommendation,
+    };
   }
 
   /**
@@ -320,63 +471,253 @@ Format your response as JSON:
   }
 
   /**
-   * 初始化失败模式
+   * 初始化失败模式（30+模式）
    */
   private initializePatterns(): FailurePattern[] {
     return [
-      // 环境问题模式
+      // ============ 环境问题模式 (10个) ============
+      
+      // 网络相关 (6个)
       {
-        pattern: /timeout|timed out|network|connection refused|econnrefused/i,
+        pattern: /ECONNREFUSED|connection refused|ERR_CONNECTION_REFUSED/i,
         type: FailureType.ENVIRONMENT,
-        keywords: ['timeout', 'network', 'connection', 'refused', 'unavailable'],
-        weight: 0.7
+        keywords: ['ECONNREFUSED', 'connection', 'refused'],
+        weight: 0.85
       },
       {
-        pattern: /service unavailable|503|502|504/i,
+        pattern: /ETIMEDOUT|connection timeout|request timeout/i,
         type: FailureType.ENVIRONMENT,
-        keywords: ['service', 'unavailable', '503', '502', '504'],
-        weight: 0.8
+        keywords: ['ETIMEDOUT', 'timeout', 'connection'],
+        weight: 0.85
+      },
+      {
+        pattern: /ENOTFOUND|getaddrinfo|DNS/i,
+        type: FailureType.ENVIRONMENT,
+        keywords: ['ENOTFOUND', 'DNS', 'getaddrinfo'],
+        weight: 0.90
+      },
+      {
+        pattern: /net::ERR_|network error|fetch failed/i,
+        type: FailureType.ENVIRONMENT,
+        keywords: ['ERR', 'network', 'fetch failed'],
+        weight: 0.80
+      },
+      {
+        pattern: /Network request failed|Failed to fetch/i,
+        type: FailureType.ENVIRONMENT,
+        keywords: ['Network', 'request', 'failed', 'fetch'],
+        weight: 0.80
+      },
+      {
+        pattern: /ECONNRESET|socket hang up|connection reset/i,
+        type: FailureType.ENVIRONMENT,
+        keywords: ['ECONNRESET', 'socket', 'reset'],
+        weight: 0.85
       },
       
-      // 测试脆弱性模式
+      // 服务状态相关 (4个)
       {
-        pattern: /element not found|no such element|cannot find element|selector/i,
-        type: FailureType.TEST_FRAGILITY,
-        keywords: ['element', 'not found', 'selector', 'locator'],
-        weight: 0.8
+        pattern: /503|service unavailable|Service Unavailable/i,
+        type: FailureType.ENVIRONMENT,
+        keywords: ['503', 'service', 'unavailable'],
+        weight: 0.90
       },
       {
-        pattern: /stale element|element is not attached|detached/i,
-        type: FailureType.TEST_FRAGILITY,
-        keywords: ['stale', 'detached', 'not attached'],
-        weight: 0.9
+        pattern: /502|bad gateway|Bad Gateway/i,
+        type: FailureType.ENVIRONMENT,
+        keywords: ['502', 'bad', 'gateway'],
+        weight: 0.90
       },
       {
-        pattern: /waiting for .* failed|wait .* timeout/i,
-        type: FailureType.TEST_FRAGILITY,
-        keywords: ['waiting', 'wait', 'timeout'],
-        weight: 0.7
+        pattern: /504|gateway timeout|Gateway Timeout/i,
+        type: FailureType.ENVIRONMENT,
+        keywords: ['504', 'gateway', 'timeout'],
+        weight: 0.90
+      },
+      {
+        pattern: /database.*unavailable|db.*connection.*failed/i,
+        type: FailureType.ENVIRONMENT,
+        keywords: ['database', 'unavailable', 'connection'],
+        weight: 0.85
       },
       
-      // 真实 Bug 模式
+      // ============ 超时相关模式 (5个) ============
       {
-        pattern: /assertion failed|expected .* but got|received/i,
-        type: FailureType.REAL_BUG,
-        keywords: ['assertion', 'expected', 'actual', 'received'],
-        weight: 0.6
+        pattern: /Timeout of \d+ms exceeded|timeout exceeded/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['timeout', 'exceeded'],
+        weight: 0.75
       },
       {
-        pattern: /undefined is not|cannot read property|null pointer/i,
-        type: FailureType.REAL_BUG,
-        keywords: ['undefined', 'null', 'property', 'pointer'],
-        weight: 0.7
+        pattern: /Timed out waiting for|wait.*timeout/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['timed out', 'waiting'],
+        weight: 0.75
       },
       {
-        pattern: /type error|reference error|syntax error/i,
+        pattern: /Element not visible within timeout/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['element', 'visible', 'timeout'],
+        weight: 0.80
+      },
+      {
+        pattern: /page\.waitFor.*timeout|waitForSelector.*timeout/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['waitFor', 'timeout'],
+        weight: 0.80
+      },
+      {
+        pattern: /operation timed out|execution.*timeout/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['operation', 'timeout'],
+        weight: 0.70
+      },
+      
+      // ============ 选择器/元素定位相关 (8个) ============
+      {
+        pattern: /Element not found|No element found|Unable to find element/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['element', 'not found', 'unable to find'],
+        weight: 0.85
+      },
+      {
+        pattern: /No such element|NoSuchElementError/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['no such element', 'NoSuchElementError'],
+        weight: 0.90
+      },
+      {
+        pattern: /Selector .* did not match|selector.*not.*match/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['selector', 'did not match'],
+        weight: 0.85
+      },
+      {
+        pattern: /stale element|StaleElementReferenceError/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['stale', 'element'],
+        weight: 0.90
+      },
+      {
+        pattern: /element is not attached|detached from document/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['not attached', 'detached'],
+        weight: 0.90
+      },
+      {
+        pattern: /element not interactable|ElementNotInteractableError/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['not interactable', 'ElementNotInteractableError'],
+        weight: 0.85
+      },
+      {
+        pattern: /element.*covered|obscured|overlapping/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['covered', 'obscured', 'overlapping'],
+        weight: 0.80
+      },
+      {
+        pattern: /invalid selector|SelectorError|invalid CSS/i,
+        type: FailureType.TEST_FRAGILITY,
+        keywords: ['invalid', 'selector', 'CSS'],
+        weight: 0.75
+      },
+      
+      // ============ 断言相关 (6个) ============
+      {
+        pattern: /Expected .* but got|Expected.*to be.*but received/i,
         type: FailureType.REAL_BUG,
-        keywords: ['TypeError', 'ReferenceError', 'SyntaxError'],
-        weight: 0.8
-      }
+        keywords: ['expected', 'but got', 'received'],
+        weight: 0.70
+      },
+      {
+        pattern: /AssertionError|assertion.*failed/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['AssertionError', 'assertion', 'failed'],
+        weight: 0.75
+      },
+      {
+        pattern: /toBe|toEqual|toMatch.*failed/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['toBe', 'toEqual', 'toMatch'],
+        weight: 0.70
+      },
+      {
+        pattern: /Expected.*to contain|does not contain/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['expected', 'contain'],
+        weight: 0.70
+      },
+      {
+        pattern: /Expected.*to have.*but has/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['expected', 'to have'],
+        weight: 0.70
+      },
+      {
+        pattern: /snapshot.*different|snapshot.*mismatch/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['snapshot', 'different', 'mismatch'],
+        weight: 0.65
+      },
+      
+      // ============ 异步相关 (5个) ============
+      {
+        pattern: /Promise rejected|Unhandled promise rejection/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['promise', 'rejected', 'unhandled'],
+        weight: 0.75
+      },
+      {
+        pattern: /await is only valid in async|async.*await/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['await', 'async'],
+        weight: 0.85
+      },
+      {
+        pattern: /callback was already called|double callback/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['callback', 'already called', 'double'],
+        weight: 0.80
+      },
+      {
+        pattern: /Maximum call stack size exceeded|stack overflow/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['stack', 'exceeded', 'overflow'],
+        weight: 0.85
+      },
+      {
+        pattern: /race condition|concurrent.*modification/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['race', 'concurrent', 'modification'],
+        weight: 0.70
+      },
+      
+      // ============ 类型错误相关 (4个) ============
+      {
+        pattern: /TypeError|Type Error/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['TypeError'],
+        weight: 0.80
+      },
+      {
+        pattern: /ReferenceError|is not defined/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['ReferenceError', 'not defined'],
+        weight: 0.85
+      },
+      {
+        pattern: /undefined is not|cannot read property.*undefined/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['undefined', 'cannot read'],
+        weight: 0.80
+      },
+      {
+        pattern: /null.*is not|cannot read property.*null/i,
+        type: FailureType.REAL_BUG,
+        keywords: ['null', 'cannot read'],
+        weight: 0.80
+      },
     ];
   }
 

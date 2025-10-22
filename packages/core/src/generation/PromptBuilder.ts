@@ -1,5 +1,10 @@
 /**
  * PromptBuilder: Construct optimized prompts for LLM
+ * 
+ * Enhanced with:
+ * - Tiered prompt strategy (simple vs complex functions)
+ * - Framework-specific best practices
+ * - Error case learning from failed generations
  */
 
 import type { FunctionContext, TestStrategy, TestType } from '@testmind/shared';
@@ -11,12 +16,78 @@ export interface PromptContext {
   examples: unknown[];
 }
 
+export interface PromptTier {
+  complexity: 'simple' | 'moderate' | 'complex';
+  verbosity: 'minimal' | 'standard' | 'detailed';
+  includeExamples: boolean;
+  includeErrorCases: boolean;
+}
+
+export interface FrameworkBestPractice {
+  name: string;
+  practices: string[];
+  antiPatterns: string[];
+  examples?: string[];
+}
+
 export class PromptBuilder {
+  private commonErrorCases: string[] = [];
+  
+  constructor() {
+    // Initialize with common error patterns to avoid
+    this.commonErrorCases = [
+      'Inventing parameters that don\'t exist in the function signature',
+      'Using wrong import paths (too many ../ or wrong file names)',
+      'Mixing test frameworks (using jest.* in vitest)',
+      'Creating empty test cases without assertions',
+      'Testing implementation details instead of behavior',
+      'Overcomplicating mocks for pure functions',
+    ];
+  }
+  
   /**
-   * Build prompt for unit test generation
+   * Determine prompt tier based on function complexity
+   */
+  private determinePromptTier(context: FunctionContext): PromptTier {
+    const cyclomaticComplexity = context.complexity.cyclomaticComplexity;
+    const hasSideEffects = context.sideEffects.length > 0;
+    const hasMultipleDeps = context.dependencies.length > 2;
+    
+    // Simple: low complexity, pure function
+    if (cyclomaticComplexity <= 3 && !hasSideEffects && !hasMultipleDeps) {
+      return {
+        complexity: 'simple',
+        verbosity: 'minimal',
+        includeExamples: false,
+        includeErrorCases: false,
+      };
+    }
+    
+    // Complex: high complexity, side effects, or many dependencies
+    if (cyclomaticComplexity > 10 || (hasSideEffects && hasMultipleDeps)) {
+      return {
+        complexity: 'complex',
+        verbosity: 'detailed',
+        includeExamples: true,
+        includeErrorCases: true,
+      };
+    }
+    
+    // Moderate: everything else
+    return {
+      complexity: 'moderate',
+      verbosity: 'standard',
+      includeExamples: false,
+      includeErrorCases: true,
+    };
+  }
+  
+  /**
+   * Build prompt for unit test generation with tiered strategy
    */
   buildUnitTestPrompt(promptContext: PromptContext): string {
     const { context, strategy, framework } = promptContext;
+    const tier = this.determinePromptTier(context);
 
     // Get framework-specific mock syntax
     const mockSyntax = this.getFrameworkMockSyntax(framework);
@@ -35,11 +106,17 @@ Side effects: ${context.sideEffects.map((se) => se.type).join(', ')}
 Mock: ${strategy.mockStrategy.dependencies.join(', ')} using ${mockSyntax.mock}
 `;
 
-    // Get framework-specific syntax guide
-    const frameworkGuide = this.getFrameworkGuide(framework);
+    // Get framework-specific syntax guide with best practices
+    const frameworkGuide = this.getFrameworkGuideWithBestPractices(framework);
     
     // Get strict function signature constraints
     const signatureConstraints = this.buildSignatureConstraints(context);
+    
+    // Build error avoidance section if needed
+    const errorAvoidance = tier.includeErrorCases ? this.buildErrorAvoidanceSection() : '';
+    
+    // Build complexity-specific guidance
+    const complexityGuidance = this.buildComplexityGuidance(tier, context);
     
     // Calculate correct import path
     const testFilePath = context.signature.filePath.replace(/\.(ts|js)$/, '.test.$1');
@@ -105,6 +182,10 @@ ${frameworkGuide}
 ## Output
 
 Return ONLY test code in TypeScript code block.
+
+${complexityGuidance}
+
+${errorAvoidance}
 `;
   }
 
@@ -145,7 +226,31 @@ Integration points: ${integrationPoints.join(', ')}
   }
 
   /**
-   * Get framework-specific syntax guide (optimized version)
+   * Get framework-specific syntax guide with best practices
+   */
+  private getFrameworkGuideWithBestPractices(framework: string): string {
+    const bestPractices = this.getFrameworkBestPractices(framework);
+    const syntaxGuide = this.getFrameworkGuide(framework);
+    
+    if (!bestPractices) {
+      return syntaxGuide;
+    }
+    
+    const practicesSection = `
+### Best Practices for ${bestPractices.name}
+
+✅ DO:
+${bestPractices.practices.map(p => `- ${p}`).join('\n')}
+
+❌ DON'T:
+${bestPractices.antiPatterns.map(ap => `- ${ap}`).join('\n')}
+`;
+    
+    return syntaxGuide + practicesSection;
+  }
+  
+  /**
+   * Get framework-specific syntax guide
    */
   private getFrameworkGuide(framework: string): string {
     if (framework === 'vitest') {
@@ -165,6 +270,128 @@ Mock: \`jest.mock()\` | Spy: \`jest.spyOn()\` | Fn: \`jest.fn()\`
 `;
     } else {
       return `## Framework: ${framework}\n`;
+    }
+  }
+  
+  /**
+   * Get framework-specific best practices
+   */
+  private getFrameworkBestPractices(framework: string): FrameworkBestPractice | null {
+    const practices: Record<string, FrameworkBestPractice> = {
+      cypress: {
+        name: 'Cypress',
+        practices: [
+          'Use data-testid for stable selectors: cy.get(\'[data-testid="submit-btn"]\')',
+          'Use cy.intercept() for API mocking',
+          'Avoid cy.wait() with hardcoded times, use aliases instead',
+          'Chain commands properly: cy.get().should().click()',
+          'Use custom commands for repeated actions',
+        ],
+        antiPatterns: [
+          'Using class names for selectors (brittle, changes often)',
+          'Selecting by text content without data-testid',
+          'Testing implementation details',
+          'Overusing cy.wait()',
+          'Not cleaning up state between tests',
+        ],
+      },
+      playwright: {
+        name: 'Playwright',
+        practices: [
+          'Use getByRole() for accessible selectors: page.getByRole(\'button\', { name: \'Submit\' })',
+          'Leverage auto-waiting: Playwright waits automatically',
+          'Use page object model for complex flows',
+          'Test across multiple browsers (chromium, firefox, webkit)',
+          'Use .locator() for flexible element selection',
+        ],
+        antiPatterns: [
+          'Using XPath when getByRole/getByTestId would work',
+          'Manual waits (waitForTimeout) instead of auto-waiting',
+          'Not using test fixtures for setup/teardown',
+          'Ignoring accessibility in selectors',
+          'Hardcoding delays',
+        ],
+      },
+      'react-testing-library': {
+        name: 'React Testing Library',
+        practices: [
+          'Query by role/label/text: getByRole(\'button\', { name: /submit/i })',
+          'Use userEvent over fireEvent for realistic interactions',
+          'Test user behavior, not implementation details',
+          'Use waitFor() for async updates',
+          'Avoid querying by className or id',
+        ],
+        antiPatterns: [
+          'Testing component internal state',
+          'Using container.querySelector()',
+          'fireEvent instead of userEvent',
+          'Not using *ByRole queries',
+          'Testing props directly instead of rendered output',
+        ],
+      },
+    };
+    
+    return practices[framework] || null;
+  }
+  
+  /**
+   * Build complexity-specific guidance
+   */
+  private buildComplexityGuidance(tier: PromptTier, context: FunctionContext): string {
+    if (tier.complexity === 'simple') {
+      return `
+## 💡 Guidance (Simple Function)
+
+This is a simple function - keep tests straightforward:
+- Focus on core functionality
+- Use minimal mocks (if any)
+- Keep it concise but thorough
+`;
+    }
+    
+    if (tier.complexity === 'complex') {
+      return `
+## 💡 Guidance (Complex Function)
+
+This is a complex function - use structured approach:
+- Break down into scenarios
+- Consider Chain-of-Thought: describe logic first, then test
+- Mock external dependencies carefully
+- Test error paths thoroughly
+- Consider edge cases (${context.strategy.edgeCases.length} identified)
+`;
+    }
+    
+    return ''; // Standard complexity needs no extra guidance
+  }
+  
+  /**
+   * Build error avoidance section from learned cases
+   */
+  private buildErrorAvoidanceSection(): string {
+    if (this.commonErrorCases.length === 0) {
+      return '';
+    }
+    
+    return `
+## ⚠️ Common Mistakes to Avoid
+
+Learn from past errors - DO NOT:
+${this.commonErrorCases.map(error => `- ${error}`).join('\n')}
+`;
+  }
+  
+  /**
+   * Add a new error case to learn from
+   */
+  public learnFromError(errorDescription: string): void {
+    if (!this.commonErrorCases.includes(errorDescription)) {
+      this.commonErrorCases.push(errorDescription);
+      
+      // Keep only last 10 errors to avoid prompt bloat
+      if (this.commonErrorCases.length > 10) {
+        this.commonErrorCases.shift();
+      }
     }
   }
 

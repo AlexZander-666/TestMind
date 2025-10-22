@@ -1,16 +1,34 @@
 /**
  * DiffReviewer - 交互式 Diff 审查器
  * 
+ * Enhanced with:
+ * - Colored diff output (chalk)
+ * - Per-hunk review capability
+ * - Change statistics display
+ * - Extended interactive commands
+ * 
  * 功能：
- * - 交互式展示 diff
- * - 用户可以 accept/reject/edit
+ * - 交互式展示 diff（彩色）
+ * - 用户可以 accept/reject/edit/comment
  * - 支持逐个 hunk 审查
  * - 支持快捷键操作
+ * - 显示详细变更统计
  */
 
 import * as readline from 'readline';
 import type { FileDiff, DiffHunk } from './DiffGenerator';
 import { DiffGenerator } from './DiffGenerator';
+
+// Chalk colors for diff output
+const colors = {
+  red: (text: string) => `\x1b[31m${text}\x1b[0m`,
+  green: (text: string) => `\x1b[32m${text}\x1b[0m`,
+  yellow: (text: string) => `\x1b[33m${text}\x1b[0m`,
+  blue: (text: string) => `\x1b[34m${text}\x1b[0m`,
+  cyan: (text: string) => `\x1b[36m${text}\x1b[0m`,
+  dim: (text: string) => `\x1b[2m${text}\x1b[0m`,
+  bold: (text: string) => `\x1b[1m${text}\x1b[0m`,
+};
 
 export interface ReviewDecision {
   action: 'accept' | 'reject' | 'edit' | 'skip';
@@ -117,17 +135,20 @@ export class DiffReviewer {
    * 审查单个文件 diff
    */
   private async reviewFileDiff(diff: FileDiff): Promise<ReviewDecision> {
-    console.log('═'.repeat(80));
-    console.log(`\n📄 File: ${diff.filePath}\n`);
+    console.log(colors.cyan('═'.repeat(80)));
+    console.log(`\n${colors.bold('📄 File:')} ${colors.blue(diff.filePath)}\n`);
+
+    // 显示变更统计
+    this.displayChangeStatistics(diff);
 
     // 显示 diff
     if (this.options.colorOutput) {
-      console.log(this.diffGenerator.formatColoredDiff(diff));
+      this.displayColoredDiff(diff);
     } else {
-      console.log(this.diffGenerator.formatUnifiedDiff(diff));
+      console.log(diff.diff || '(no diff content)');
     }
 
-    console.log('\n' + '─'.repeat(80) + '\n');
+    console.log('\n' + colors.dim('─'.repeat(80)) + '\n');
 
     // 获取用户决定
     const action = await this.promptForAction();
@@ -137,20 +158,63 @@ export class DiffReviewer {
       filePath: diff.filePath
     };
   }
+  
+  /**
+   * Display change statistics
+   */
+  private displayChangeStatistics(diff: FileDiff): void {
+    const additions = diff.additions || 0;
+    const deletions = diff.deletions || 0;
+    const total = additions + deletions;
+    
+    console.log(colors.dim('─'.repeat(80)));
+    console.log(`${colors.bold('Changes:')} ${colors.green(`+${additions}`)} ${colors.red(`-${deletions}`)} (${total} total)`);
+    
+    // Visual bar
+    const barLength = 50;
+    const addBar = Math.round((additions / Math.max(total, 1)) * barLength);
+    const delBar = barLength - addBar;
+    
+    const bar = colors.green('█'.repeat(addBar)) + colors.red('█'.repeat(delBar));
+    console.log(bar);
+    console.log(colors.dim('─'.repeat(80)) + '\n');
+  }
+  
+  /**
+   * Display colored diff output
+   */
+  private displayColoredDiff(diff: FileDiff): void {
+    const lines = (diff.diff || '').split('\n');
+    
+    for (const line of lines) {
+      if (line.startsWith('+++') || line.startsWith('---')) {
+        console.log(colors.bold(line));
+      } else if (line.startsWith('+')) {
+        console.log(colors.green(line));
+      } else if (line.startsWith('-')) {
+        console.log(colors.red(line));
+      } else if (line.startsWith('@@')) {
+        console.log(colors.cyan(line));
+      } else {
+        console.log(colors.dim(line));
+      }
+    }
+  }
 
   /**
-   * 提示用户选择操作
+   * 提示用户选择操作 (Enhanced with more commands)
    */
   private async promptForAction(): Promise<ReviewDecision['action']> {
     const prompt = `
-Choose an action:
-  [a] Accept   - Apply this diff
-  [r] Reject   - Skip this diff
-  [e] Edit     - Edit before applying (not implemented yet)
-  [s] Skip     - Skip for now
-  [q] Quit     - Stop review
+${colors.bold('Choose an action:')}
+  ${colors.green('[a]')} Accept   - Apply this diff
+  ${colors.red('[r]')} Reject   - Skip this diff
+  ${colors.yellow('[e]')} Edit     - Edit before applying (planned)
+  ${colors.cyan('[c]')} Comment  - Add comment (planned)
+  ${colors.dim('[s]')} Skip     - Skip for now
+  ${colors.dim('[q]')} Quit     - Stop review
 
-Your choice: `;
+${colors.bold('Your choice:')} `;
 
     const answer = await this.question(prompt);
     const choice = answer.trim().toLowerCase();
@@ -158,31 +222,38 @@ Your choice: `;
     switch (choice) {
       case 'a':
       case 'accept':
-        console.log('✅ Accepted\n');
+        console.log(colors.green('✅ Accepted') + '\n');
         return 'accept';
       
       case 'r':
       case 'reject':
-        console.log('❌ Rejected\n');
+        console.log(colors.red('❌ Rejected') + '\n');
         return 'reject';
       
       case 'e':
       case 'edit':
-        console.log('⚠️  Edit mode not yet implemented. Skipping...\n');
-        return 'skip';
+        console.log(colors.yellow('⚠️  Edit mode planned for future release') + '\n');
+        console.log('Would you like to (a)ccept or (r)eject instead?\n');
+        return this.promptForAction();
+      
+      case 'c':
+      case 'comment':
+        console.log(colors.yellow('💬 Comment feature planned for future release') + '\n');
+        console.log('Continuing with review...\n');
+        return this.promptForAction();
       
       case 's':
       case 'skip':
-        console.log('⏭️  Skipped\n');
+        console.log(colors.cyan('⏭️  Skipped') + '\n');
         return 'skip';
       
       case 'q':
       case 'quit':
-        console.log('👋 Quitting review...\n');
+        console.log(colors.dim('👋 Quitting review...') + '\n');
         process.exit(0);
       
       default:
-        console.log('Invalid choice. Please try again.\n');
+        console.log(colors.red('❌ Invalid choice. Please try again.') + '\n');
         return this.promptForAction();
     }
   }
@@ -199,17 +270,31 @@ Your choice: `;
   }
 
   /**
-   * 显示审查摘要
+   * 显示审查摘要 (Enhanced with statistics)
    */
   private displaySummary(result: ReviewResult): void {
-    console.log('\n' + '═'.repeat(80));
-    console.log('\n📊 Review Summary\n');
-    console.log('─'.repeat(80));
-    console.log(`Total Reviewed:  ${result.totalReviewed}`);
-    console.log(`✅ Accepted:     ${result.totalAccepted}`);
-    console.log(`❌ Rejected:     ${result.totalRejected}`);
-    console.log(`⏭️  Skipped:      ${result.totalReviewed - result.totalAccepted - result.totalRejected}`);
-    console.log('═'.repeat(80) + '\n');
+    const skipped = result.totalReviewed - result.totalAccepted - result.totalRejected;
+    const acceptRate = result.totalReviewed > 0 
+      ? ((result.totalAccepted / result.totalReviewed) * 100).toFixed(1)
+      : '0';
+    
+    console.log('\n' + colors.cyan('═'.repeat(80)));
+    console.log(`\n${colors.bold('📊 Review Summary')}\n`);
+    console.log(colors.dim('─'.repeat(80)));
+    console.log(`${colors.bold('Total Reviewed:')}  ${result.totalReviewed}`);
+    console.log(`${colors.green('✅ Accepted:')}     ${result.totalAccepted}`);
+    console.log(`${colors.red('❌ Rejected:')}     ${result.totalRejected}`);
+    console.log(`${colors.cyan('⏭️  Skipped:')}      ${skipped}`);
+    console.log(`${colors.bold('📈 Accept Rate:')}  ${acceptRate}%`);
+    console.log(colors.cyan('═'.repeat(80)) + '\n');
+    
+    if (result.totalAccepted > 0) {
+      console.log(colors.green(`✨ ${result.totalAccepted} diffs ready to apply!`));
+    }
+    if (result.totalRejected > 0) {
+      console.log(colors.yellow(`⚠️  ${result.totalRejected} diffs rejected`));
+    }
+    console.log('');
   }
 
   /**

@@ -1,6 +1,6 @@
 {
   "name": "@testmind/cli",
-  "version": "0.5.0-beta",
+  "version": "0.6.0",
   "description": "Command-line interface for TestMind",
   "main": "./dist/index.js",
   "bin": {
