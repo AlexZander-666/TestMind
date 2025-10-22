@@ -1,0 +1,46 @@
+{
+  "entries": [
+    [
+      "75beca375a0193ef7e97115bb56e3507",
+      {
+        "prompt": "Generate a simple unit test for this function:\n\n```typescript\nexport function add(a: number, b: number): number {\n  return a + b;\n}\n```\n\nUse vitest framework. Return ONLY the test code.",
+        "response": "```typescript\nimport { describe, it, expect } from 'vitest';\nimport { add } from './add';\n\ndescribe('add', () => {\n  it('should add two numbers correctly', () => {\n    // Arrange\n    const a = 1;\n    const b = 2;\n    const expected = 3;\n\n    // Act\n    const result = add(a, b);\n\n    // Assert\n    expect(result).toBe(expected);\n  });\n\n  it('should handle negative numbers', () => {\n    expect(add(-1, -1)).toBe(-2);\n  });\n\n  it('should handle adding a positive and a negative number', () => {\n    expect(add(-5, 10)).toBe(5);\n  });\n\n  it('should handle adding zero', () => {\n    expect(add(5, 0)).toBe(5);\n    expect(add(0, 5)).toBe(5);\n  });\n});\n```",
+        "timestamp": 1761106959807,
+        "provider": "custom",
+        "model": "gemini-2.5-pro-preview-06-05-maxthinking",
+        "usage": {
+          "promptTokens": 53,
+          "completionTokens": 295,
+          "totalTokens": 348
+        },
+        "accessCount": 1,
+        "lastAccessTime": 1761106959807
+      }
+    ],
+    [
+      "f2c3980119105bb9f4dbd6424f406b0a",
+      {
+        "prompt": "Generate comprehensive unit tests for PaymentService.\n\nRequirements:\n- Use vitest framework\n- Mock payment gateway\n- Test success and error cases\n- Include validation tests\n\nCode Context:\n// File: src/services/PaymentService.ts (lines 1-9)\nexport class PaymentService {\n  async processPayment(amount: number, currency: string): Promise<Payment> {\n    if (amount <= 0) throw new Error('Invalid amount');\n    const payment = await this.gateway.charge(amount, currency);\n    await this.db.savePayment(payment);\n    return payment;\n  }\n}",
+        "response": "Of course. Here are comprehensive unit tests for the `PaymentService` using the Vitest framework, covering success, error, and validation cases with mocked dependencies.",
+        "timestamp": 1761106971567,
+        "provider": "custom",
+        "model": "gemini-2.5-pro-preview-06-05-maxthinking",
+        "usage": {
+          "promptTokens": 931,
+          "completionTokens": 32,
+          "totalTokens": 1729
+        },
+        "accessCount": 1,
+        "lastAccessTime": 1761106971567
+      }
+    ]
+  ],
+  "accessOrder": [
+    "75beca375a0193ef7e97115bb56e3507",
+    "f2c3980119105bb9f4dbd6424f406b0a"
+  ],
+  "stats": {
+    "hits": 0,
+    "misses": 2
+  }
+}

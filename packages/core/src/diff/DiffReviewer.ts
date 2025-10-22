@@ -80,9 +80,8 @@ export class DiffReviewer {
       autoAcceptThreshold: options.autoAcceptThreshold ?? 0.95
     };
 
-    this.diffGenerator = new DiffGenerator({
-      contextLines: this.options.showFullContext ? 10 : 3
-    });
+    this.diffGenerator = new DiffGenerator();
+    // Context lines will be handled in diff generation options
   }
 
   /**

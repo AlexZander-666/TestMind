@@ -81,7 +81,10 @@ export class DiffApplier {
       try {
         currentContent = await fs.readFile(diff.filePath, 'utf-8');
       } catch (error) {
-        if (diff.operation === 'create') {
+        // File doesn't exist - assume this is a file creation
+        // Check if diff starts from line 0 (creation indicator)
+        const isCreation = diff.hunks.length > 0 && diff.hunks[0].oldStart === 0;
+        if (isCreation || diff.additions > 0 && diff.deletions === 0) {
           currentContent = '';
         } else {
           result.error = `File not found: ${diff.filePath}`;

@@ -51,3 +51,20 @@ export {
   type BranchOptions
 } from './GitIntegration';
 
+export {
+  // v0.7.0+: Rich Diff UI
+  RichDiffUI,
+  createRichDiffUI,
+  type DiffGroup,
+  type RichDiffOptions,
+  type ReviewAction
+} from './RichDiffUI';
+
+export {
+  // v0.7.0+: Diff Grouper
+  DiffGrouper,
+  createDiffGrouper,
+  type GroupingStrategy,
+  type GroupingOptions
+} from './DiffGrouper';
+

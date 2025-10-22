@@ -6,6 +6,7 @@ import type { LLMRequest, LLMResponse, LLMProvider as LLMProviderType } from '@t
 import { OpenAIProvider } from './providers/OpenAIProvider';
 import { AnthropicProvider } from './providers/AnthropicProvider';
 import { OllamaProvider } from './providers/OllamaProvider';
+import { CustomProvider } from './providers/CustomProvider';
 import { createComponentLogger } from '../utils/logger';
 import { metrics, MetricNames } from '../utils/metrics';
 import { llmCache } from './LLMCache';
@@ -15,7 +16,7 @@ export interface LLMProvider {
 }
 
 export class LLMService {
-  private providers: Map<LLMProviderType, LLMProvider> = new Map();
+  private providers: Map<string, LLMProvider> = new Map();
   private logger = createComponentLogger('LLMService');
   private cacheEnabled: boolean = true; // 默认启用缓存
 
@@ -24,6 +25,7 @@ export class LLMService {
     this.providers.set('openai', new OpenAIProvider());
     this.providers.set('anthropic', new AnthropicProvider());
     this.providers.set('ollama', new OllamaProvider());
+    this.providers.set('custom', new CustomProvider());
     
     this.logger.debug('LLMService initialized', {
       providers: Array.from(this.providers.keys())
@@ -34,7 +36,7 @@ export class LLMService {
    * Generate completion from LLM (with caching)
    */
   async generate(request: LLMRequest): Promise<LLMResponse> {
-    const provider = this.providers.get(request.provider);
+    const provider = this.providers.get(request.provider as string);
     
     if (!provider) {
       const error = new Error(`Unsupported LLM provider: ${request.provider}`);

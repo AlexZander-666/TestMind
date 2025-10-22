@@ -1,5 +1,7 @@
 /**
- * ContextManager - 混合上下文管理器
+ * ContextManager - 混合上下文管理器（已升级）
+ * 
+ * v0.6.0+: 集成显式上下文管理（参考 1.md Aider 模式）
  * 
  * 实现"Aider 模式"的显式上下文控制 + 自动化 RAG
  * 核心功能：
@@ -234,11 +236,8 @@ export class ContextManager {
     // 步骤 3: 合并并排序
     const allChunks = [...explicitChunks, ...automaticChunks];
 
-    const rankedChunks = this.ranker.rankContext(
-      allChunks,
-      query,
-      explicitChunks // 显式上下文优先级最高
-    );
+    const rankedResults = this.ranker.rankChunks(allChunks);
+    const rankedChunks = rankedResults.map(r => r.context as CodeChunk);
 
     // 步骤 4: 限制在 token 窗口内
     const { chunks: truncatedChunks, truncated, totalTokens } = this.truncateToTokenLimit(

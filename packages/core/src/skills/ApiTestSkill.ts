@@ -66,13 +66,29 @@ export interface ApiTestOptions {
 /**
  * API 测试生成技能
  */
-export class ApiTestSkill extends Skill {
-  name = 'api-test';
-  description = 'Generate comprehensive API tests for REST and GraphQL';
-  version = '1.0.0';
+export class ApiTestSkill implements Skill {
+  readonly name = 'api-test';
+  readonly description = 'Generate comprehensive API tests for REST and GraphQL';
+  readonly category = 'testing' as const;
+  readonly version = '1.0.0';
+  
+  private llmService: any; // Will be injected via setLLMService
+
+  canHandle(context: SkillContext): boolean {
+    // Check if this is an API testing request
+    const prompt = context.userPrompt?.toLowerCase() || '';
+    return prompt.includes('api') || prompt.includes('rest') || 
+           prompt.includes('graphql') || prompt.includes('endpoint');
+  }
+
+  setLLMService(service: any): void {
+    this.llmService = service;
+  }
 
   async execute(context: SkillContext): Promise<SkillResult> {
-    const { input, options } = context;
+    // Extract options from context
+    const input = context.userPrompt || '';
+    const options = context.analysisResult as any || {};
     const testOptions: ApiTestOptions = {
       framework: options?.framework || 'supertest',
       includeErrorCases: options?.includeErrorCases ?? true,
@@ -93,16 +109,26 @@ export class ApiTestSkill extends Skill {
 
       return {
         success: true,
-        output: testCode,
+        message: 'API test generated successfully',
+        changes: [{
+          type: 'create',
+          path: 'api.test.ts', // Will be determined by orchestrator
+          content: testCode,
+          description: `Generated ${this.isGraphQL(input) ? 'GraphQL' : 'REST'} API test`
+        }],
         metadata: {
           framework: testOptions.framework,
-          testType: this.isGraphQL(input) ? 'graphql' : 'rest'
+          testType: this.isGraphQL(input) ? 'graphql' : 'rest',
+          testCode // Store test code in metadata for backward compatibility
         }
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        message: error instanceof Error ? error.message : String(error),
+        metadata: {
+          error: error instanceof Error ? error.stack : undefined
+        }
       };
     }
   }
@@ -411,8 +437,8 @@ Include proper imports and describe blocks.
 `;
 
     const response = await this.llmService.generate({
-      provider: context.llmProvider || 'openai',
-      model: context.llmModel || 'gpt-4',
+      provider: context.projectConfig?.llmProvider || 'openai',
+      model: context.projectConfig?.llmModel || 'gpt-4',
       prompt,
       temperature: 0.3,
       maxTokens: 2000
@@ -430,13 +456,7 @@ Include proper imports and describe blocks.
     return /\b(query|mutation|subscription)\s+\w+/i.test(input);
   }
 
-  /**
-   * 验证技能能力
-   */
-  validate(): boolean {
-    // API 测试技能总是可用
-    return true;
-  }
+  // validate method is optional in Skill interface, so we don't need it here
 }
 
 /**

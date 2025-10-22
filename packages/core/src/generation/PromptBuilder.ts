@@ -358,7 +358,7 @@ This is a complex function - use structured approach:
 - Consider Chain-of-Thought: describe logic first, then test
 - Mock external dependencies carefully
 - Test error paths thoroughly
-- Consider edge cases (${context.strategy.edgeCases.length} identified)
+- Consider edge cases thoroughly
 `;
     }
     

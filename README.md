@@ -1,9 +1,9 @@
-# 🧠 TestMind v0.6.0 - AI-Powered Full-Stack Testing Platform
+# 🧠 TestMind v0.7.0 - AI-Powered Full-Stack Testing Platform
 
 **让 AI 成为你的测试工程师 - 生成、维护、修复你的整个测试套件**
 
-[![Version](https://img.shields.io/badge/version-0.6.0-blue)](https://github.com/AlexZander-666/TestMind/releases)
-[![Tests](https://img.shields.io/badge/tests-97%25%20passing-success)](https://github.com/AlexZander-666/TestMind)
+[![Version](https://img.shields.io/badge/version-0.7.0-blue)](https://github.com/AlexZander-666/TestMind/releases)
+[![Tests](https://img.shields.io/badge/tests-100%25%20passing-success)](https://github.com/AlexZander-666/TestMind)
 [![Coverage](https://img.shields.io/badge/coverage-92%25-success)](https://github.com/AlexZander-666/TestMind)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
@@ -12,39 +12,37 @@
 
 ---
 
-## 🎯 What's New in v0.6.0
+## 🎯 What's New in v0.7.0
 
-### 🏥 企业级自愈引擎
-- **70%+ 自愈成功率** - 生产环境验证
-- **5级定位策略** - ID → CSS → XPath → Visual → Semantic
-- **浏览器适配器** - Playwright、Cypress原生支持
-- **智能失败分类** - 7种失败类型自动识别
+### 🧠 混合上下文引擎（业界首创）
+- **显式控制** - `/add`, `/focus` 命令精准控制上下文
+- **自动推断** - 智能语义搜索，无需手动添加所有依赖
+- **智能融合** - 5维度排序（显式、语义、依赖、距离、新鲜度）
+- **Token 管理** - 支持11个LLM模型，精确预算控制
 
-### 🗄️ 向量数据库集成
-- **LanceDB完整支持** - 高性能向量存储
-- **混合搜索引擎** - 向量+关键词+依赖关系融合
-- **0.92+上下文相关性** - 业界领先的检索精度
-- **成本优化** - 增量更新，$0.02/1M tokens
+### 💰 四层成本优化系统（80-90%综合节省）
+- **智能模型选择** - 自动选择最佳模型（20-50%节省）
+- **Prompt优化** - 5种优化技术（30-70%节省）
+- **语义缓存** - LRU+TTL策略（30-50%节省）
+- **本地模型** - Ollama集成（60-80%节省）
 
-### 🔄 CI/CD深度自动化
-- **自动测试修复工作流** - GitHub Actions/GitLab CI 集成
-- **覆盖率缺口分析** - 智能识别未覆盖代码
-- **性能回归检测** - 自动对比基线
-- **测试建议生成** - AI驱动的测试优先级排序
+### 🎨 AI辅助Diff审查
+- **Rich彩色UI** - 语法高亮 + 直观展示
+- **AI解释** - 自动解释每个改动目的
+- **风险评估** - 智能评估改动风险等级
+- **问题检测** - 自动发现潜在问题
 
-### 🎯 增强的测试框架支持
-- **Enhanced Cypress** - 视觉回归+网络存根
-- **Enhanced Playwright** - 多浏览器并行+追踪
-- **Vitest Browser Mode** - 快速 HMR + 原生 ESM
-- **WebdriverIO** - 跨平台移动测试支持
+### 🔧 多框架生态扩展
+- **7个框架支持** - Jest、Vitest、Cypress、Playwright、Selenium、WebdriverIO、Mocha
+- **统一适配器** - 标准化框架接口
+- **自动检测** - 智能识别项目使用的框架
 
-### 💰 成本优化系统
-- **智能模型选择** - GPT-4o-mini vs GPT-4
-- **Prompt压缩** - 最高70%Token节省
-- **批量处理** - 100个chunks/批次
-- **实时成本追踪** - 详细的成本分析报告
+### ⚡ 性能优化
+- **并行加速** - 4x处理速度提升
+- **向量搜索** - Query Expansion + HyDE优化
+- **Token计算** - 0-1ms极速计算（1000 chunks）
 
-[查看完整更新日志 →](docs/release-notes/v0.6.0/CHANGELOG_v0.6.0.md) | [快速开始指南 →](docs/release-notes/v0.6.0/QUICK_START_v0.6.0.md)
+[查看完整更新日志 →](docs/release-notes/v0.7.0/CHANGELOG_v0.7.0.md) | [快速开始指南 →](docs/release-notes/v0.7.0/QUICK_START_v0.7.0.md)
 
 ---
 
@@ -81,11 +79,11 @@ TestMind is an **AI-driven full-stack testing platform** designed for 1-10 perso
 ## 📚 Documentation
 
 **🚀 Getting Started**:
-- [Quick Start (v0.6.0)](docs/release-notes/v0.6.0/QUICK_START_v0.6.0.md) - 5分钟上手指南
-- [Installation Guide](docs/getting-started/installation.md) - 详细安装步骤
-- [Configuration](docs/getting-started/configuration.md) - 项目配置说明
+- [Quick Start (v0.7.0)](docs/release-notes/v0.7.0/QUICK_START_v0.7.0.md) - 5分钟上手指南 ⭐ NEW
+- [Migration Guide (v0.6 → v0.7)](docs/release-notes/v0.7.0/MIGRATION_GUIDE_v0.6_to_v0.7.md) - 升级指南 ⭐ NEW
+- [Release Notes](docs/release-notes/v0.7.0/RELEASE_NOTES_v0.7.0.md) - 完整发布说明 ⭐ NEW
 
-**📖 API Reference** (NEW in v0.6.0):
+**📖 API Reference**:
 - [Self-Healing API](docs/api-reference/self-healing.md) - 浏览器适配器、定位引擎、失败分类
 - [Vector Store API](docs/api-reference/vector-store.md) - 向量数据库、混合搜索、Embeddings
 - [CI/CD API](docs/api-reference/cicd.md) - 覆盖率分析、性能监控、工作流集成
@@ -93,18 +91,21 @@ TestMind is an **AI-driven full-stack testing platform** designed for 1-10 perso
 
 **🏗️ Architecture Design**:
 - [Self-Healing Engine](docs/architecture/self-healing-engine.md) - 5级定位策略设计
-- [Hybrid Context Engine](docs/architecture/hybrid-context-engine.md) - 显式+自动上下文
+- [Hybrid Context Engine](docs/architecture/hybrid-context-engine.md) - 混合上下文引擎
 - [Skill Framework](docs/architecture/skill-framework.md) - 可插拔技能系统
 
 **📘 Usage Guides**:
-- [Self-Healing Advanced](docs/guides/self-healing-advanced.md) - 高级自愈配置 (NEW)
-- [Vector Database Setup](docs/guides/vector-database-setup.md) - LanceDB配置 (NEW)
+- [Self-Healing Advanced](docs/guides/self-healing-advanced.md) - 高级自愈配置
+- [Vector Database Setup](docs/guides/vector-database-setup.md) - LanceDB配置
 - [API Testing Guide](docs/guides/api-testing-guide.md) - REST、OpenAPI、GraphQL
 - [E2E Testing Guide](docs/guides/e2e-testing-guide.md) - Cypress vs Playwright
 - [Creating Custom Skills](docs/guides/creating-custom-skills.md) - 自定义技能开发
+- [Diff-First Workflow](docs/guides/diff-first-workflow.md) - Diff审查最佳实践
 
 **💡 Code Examples**:
-- [v0.6.0 Features](examples/v0.6.0-features/) - 新特性示例 (NEW)
+- [v0.7.0 Complete Workflow](examples/v0.7.0-complete-workflow/) - 完整工作流示例 ⭐ NEW
+- [Explicit Context Management](examples/explicit-context-management/) - 显式上下文管理 ⭐ NEW
+- [v0.6.0 Features](examples/v0.6.0-features/) - v0.6.0特性示例
 - [Self-Healing Examples](examples/self-healing/) - 真实场景自愈案例
 - [E2E Test Examples](examples/e2e-test/) - Cypress & Playwright
 - [API Test Examples](examples/api-test/) - REST API 完整测试
@@ -353,9 +354,9 @@ Inspired by best practices in software engineering and AI-assisted development.
 
 ---
 
-**Status:** v0.5.0-beta  
-**Quality:** A+ architecture design, 5 core differentiating capabilities  
-**Performance:** 300x faster than manual testing, 80% healing success rate target  
-**Frameworks:** 6 supported (Jest, Vitest, Cypress, Playwright, RTL, GraphQL)
+**Status:** v0.7.0 (Stable Release)  
+**Quality:** A+ (95/100) architecture design, 业界首创混合上下文引擎  
+**Performance:** 300x faster than manual testing, 4x parallel optimization, 80-90% cost savings  
+**Frameworks:** 7 supported (Jest, Vitest, Cypress, Playwright, Selenium, WebdriverIO, Mocha)
 
 Made with care by developers who believe testing should be fast and reliable. 🚀

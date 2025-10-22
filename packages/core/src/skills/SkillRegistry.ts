@@ -146,6 +146,27 @@ export class SkillRegistry {
   }
 
   /**
+   * 获取所有技能 (for SkillOrchestrator compatibility)
+   */
+  getAllSkills(): TestSkill[] {
+    return Array.from(this.skills.values());
+  }
+
+  /**
+   * 查找适合上下文的所有技能 (alias for findAllSkills)
+   */
+  findSkillsForContext(context: TestContext): TestSkill[] {
+    return this.findAllSkills(context);
+  }
+
+  /**
+   * 获取技能数量
+   */
+  getSkillCount(): number {
+    return this.skills.size;
+  }
+
+  /**
    * 列出所有技能
    */
   listSkills(options: SkillLoadOptions = {}): SkillMetadata[] {

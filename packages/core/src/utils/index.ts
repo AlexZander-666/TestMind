@@ -6,6 +6,15 @@ export * from '@testmind/shared';
 export { GitAutomation } from './GitAutomation';
 export { FileCache } from './FileCache';
 
+// v0.7.0+: Performance Optimization
+export { ParallelOptimizer, createParallelOptimizer } from './ParallelOptimizer';
+export type {
+  ParallelOptions,
+  Task,
+  TaskResult,
+  BatchResult
+} from './ParallelOptimizer';
+
 // Observability utilities
 export { logger, Logger, createComponentLogger, LogLevel, flushLogs } from './logger';
 export { metrics, Metrics, timeOperation, MetricNames } from './metrics';

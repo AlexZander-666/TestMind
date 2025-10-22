@@ -52,3 +52,7 @@ export function autoDetectAdapter(page: any) {
 
 
 
+
+
+
+

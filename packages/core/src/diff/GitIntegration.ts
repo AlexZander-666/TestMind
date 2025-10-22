@@ -207,12 +207,14 @@ Requirements:
 Return ONLY the commit message, no explanation.`;
 
       const response = await this.llmService.generate({
+        provider: 'openai',
+        model: 'gpt-4o-mini',
         prompt,
         temperature: 0.3, // Low temperature for consistent formatting
         maxTokens: 100,
       });
       
-      const message = response.text.trim();
+      const message = response.content.trim();
       this.logger.info('AI commit message generated', { message });
       
       return message;

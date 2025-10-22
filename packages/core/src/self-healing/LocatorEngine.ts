@@ -10,8 +10,9 @@
  */
 
 import { IdLocator } from './strategies/IdLocator';
-import { CssSelectorLocator } from './strategies/CssSelectorLocator';
-import { XPathLocator } from './strategies/XPathLocator';
+// TODO: Implement CssSelectorLocator and XPathLocator
+// import { CssSelectorLocator } from './strategies/CssSelectorLocator';
+// import { XPathLocator } from './strategies/XPathLocator';
 import { VisualLocator } from './strategies/VisualLocator';
 import { SemanticLocator } from './strategies/SemanticLocator';
 import type { LLMService } from '../llm/LLMService';
@@ -55,8 +56,8 @@ export interface LocatorEngineConfig {
 export class LocatorEngine {
   private config: Required<Omit<LocatorEngineConfig, 'llmService'>> & { llmService?: LLMService };
   private idLocator: IdLocator;
-  private cssLocator: CssSelectorLocator;
-  private xpathLocator: XPathLocator;
+  private cssLocator: any; // TODO: CssSelectorLocator;
+  private xpathLocator: any; // TODO: XPathLocator;
   private visualLocator: VisualLocator;
   private semanticLocator?: SemanticLocator;
 
@@ -77,8 +78,9 @@ export class LocatorEngine {
 
     // 初始化策略定位器
     this.idLocator = new IdLocator();
-    this.cssLocator = new CssSelectorLocator();
-    this.xpathLocator = new XPathLocator();
+    // TODO: Implement CssSelectorLocator and XPathLocator
+    this.cssLocator = null as any; // new CssSelectorLocator();
+    this.xpathLocator = null as any; // new XPathLocator();
     this.visualLocator = new VisualLocator();
     
     if (this.config.llmService) {
