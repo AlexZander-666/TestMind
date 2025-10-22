@@ -156,15 +156,15 @@ const MODEL_CATALOG: ModelConfig[] = [
     recommendedFor: ['architecture', 'expert-analysis'],
   },
   
-  // Google 系列
+  // Google 系列（推荐，性价比最高）
   {
     id: 'gemini-flash',
     provider: 'google',
     model: 'gemini-1.5-flash',
     contextWindow: 1000000,
     costPerMillion: 0.075,
-    capability: 6,
-    recommendedFor: ['simple-test', 'quick-analysis'],
+    capability: 7.5, // 提升：性价比极高，测试生成质量优秀
+    recommendedFor: ['simple-test', 'quick-analysis', 'refactor', 'documentation'],
   },
   {
     id: 'gemini-pro',
@@ -172,8 +172,8 @@ const MODEL_CATALOG: ModelConfig[] = [
     model: 'gemini-1.5-pro',
     contextWindow: 1000000,
     costPerMillion: 3.5,
-    capability: 8,
-    recommendedFor: ['complex-test', 'large-context'],
+    capability: 9, // 提升：复杂任务表现优秀，超大上下文窗口
+    recommendedFor: ['complex-test', 'large-context', 'architecture', 'debugging'],
   },
 ];
 
@@ -276,14 +276,22 @@ export class ModelSelector {
       score += (model.capability / 10) * 0.4;
       
       // 成本评分（权重：30%）
+      // Gemini 成本极低，优先推荐
+      const costScore = 1 - Math.min(model.costPerMillion / 20, 1); // 归一化
       if (criteria.prioritizeCost) {
-        const costScore = 1 - (model.costPerMillion / 20); // 归一化
-        score += costScore * 0.3;
+        score += costScore * 0.4; // 提高成本权重
+      } else {
+        score += costScore * 0.2; // 即使不优先成本，也考虑性价比
       }
       
-      // 上下文窗口评分（权重：20%）
+      // Google Gemini 加分（默认推荐）
+      if (model.provider === 'google') {
+        score += 0.15; // 15% 额外加分（性价比优势）
+      }
+      
+      // 上下文窗口评分（权重：15%）
       const contextScore = Math.min(model.contextWindow / criteria.contextTokens, 1);
-      score += contextScore * 0.2;
+      score += contextScore * 0.15;
       
       // 任务匹配度（权重：10%）
       const taskType = this.getTaskType(criteria.complexity);

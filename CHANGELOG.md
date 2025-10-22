@@ -2,6 +2,57 @@
 
 All notable changes to TestMind will be documented in this file.
 
+## [0.9.0] - 2025-10-23（开发中）
+
+### 🎉 Major Features - Google Gemini 深度集成 + 真正的 LanceDB
+
+#### Google Gemini Provider
+- **NEW**: GeminiProvider - 完整的 Gemini API 集成
+- **NEW**: 支持 gemini-1.5-flash 和 gemini-1.5-pro
+- **NEW**: 自动成本计算（比 OpenAI 便宜 80-90%）
+- **NEW**: 环境变量配置（GOOGLE_API_KEY / GEMINI_API_KEY）
+
+#### Gemini Embeddings
+- **NEW**: GeminiEmbeddingGenerator - text-embedding-004
+- **NEW**: 批量处理支持（减少 API 调用）
+- **NEW**: 成本追踪（-98.75% vs OpenAI）
+- **NEW**: 768 维向量（节省 50% 存储空间）
+
+#### 真正的 LanceDB 向量数据库
+- **NEW**: RealLanceDBVectorStore - 完整的 LanceDB 集成
+- **NEW**: 持久化存储（替换内存模拟）
+- **NEW**: HNSW 索引支持（加速搜索）
+- **NEW**: 增量更新（文件级别）
+
+#### ModelSelector 优化
+- **IMPROVED**: 默认优先推荐 Gemini（Google provider +15% 加分）
+- **IMPROVED**: Gemini 能力评分提升（Flash: 7.5, Pro: 9）
+- **IMPROVED**: 成本权重优化
+
+#### 文档与工具
+- **NEW**: Gemini 成本优化指南
+- **NEW**: 向量搜索性能基准测试脚本
+- **NEW**: Gemini 集成测试脚本
+- **NEW**: v0.9.0 实施总结文档
+
+### 📦 依赖更新
+
+- **ADD**: @lancedb/lancedb@0.22.2
+- **ADD**: apache-arrow@21.1.0
+- **ADD**: @langchain/google-genai@1.0.0
+
+### 🎯 性能与成本
+
+- **成本优化**: LLM 成本降低 80%（Gemini Flash vs GPT-4o-mini）
+- **成本优化**: Embedding 成本降低 99%（Gemini vs OpenAI）
+- **存储优化**: 向量存储空间节省 50%（768维 vs 1536维）
+
+### Breaking Changes
+
+无破坏性变更 ✅
+
+---
+
 ## [0.8.0] - 2025-10-23
 
 ### 🎉 Major Features - 技术提升与生态扩展

@@ -7,6 +7,7 @@ import { OpenAIProvider } from './providers/OpenAIProvider';
 import { AnthropicProvider } from './providers/AnthropicProvider';
 import { OllamaProvider } from './providers/OllamaProvider';
 import { CustomProvider } from './providers/CustomProvider';
+import { GeminiProvider } from './providers/GeminiProvider';
 import { createComponentLogger } from '../utils/logger';
 import { metrics, MetricNames } from '../utils/metrics';
 import { llmCache } from './LLMCache';
@@ -24,6 +25,8 @@ export class LLMService {
     // Initialize providers
     this.providers.set('openai', new OpenAIProvider());
     this.providers.set('anthropic', new AnthropicProvider());
+    this.providers.set('gemini', new GeminiProvider());
+    this.providers.set('google', new GeminiProvider()); // Alias for gemini
     this.providers.set('ollama', new OllamaProvider());
     this.providers.set('custom', new CustomProvider());
     
