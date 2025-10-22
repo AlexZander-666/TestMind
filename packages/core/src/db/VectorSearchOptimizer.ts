@@ -392,3 +392,6 @@ export function createVectorSearchOptimizer(): VectorSearchOptimizer {
   return new VectorSearchOptimizer();
 }
 
+
+
+

@@ -1,14 +1,40 @@
-# 🧠 TestMind v0.7.0 - AI-Powered Full-Stack Testing Platform
+# 🧠 TestMind v0.8.0 - AI-Powered Full-Stack Testing Platform
 
 **让 AI 成为你的测试工程师 - 生成、维护、修复你的整个测试套件**
 
-[![Version](https://img.shields.io/badge/version-0.7.0-blue)](https://github.com/AlexZander-666/TestMind/releases)
+[![Version](https://img.shields.io/badge/version-0.8.0-blue)](https://github.com/AlexZander-666/TestMind/releases)
 [![Tests](https://img.shields.io/badge/tests-100%25%20passing-success)](https://github.com/AlexZander-666/TestMind)
 [![Coverage](https://img.shields.io/badge/coverage-92%25-success)](https://github.com/AlexZander-666/TestMind)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Us-7289da)](https://discord.gg/testmind)
+
+---
+
+## 🎯 What's New in v0.8.0
+
+### 🌐 深化 TS/JS 生态支持
+- **Vue 生态** - Vue 2/3, Composition API, Pinia/Vuex 完整支持
+- **全栈框架** - Next.js (App Router) + Nuxt.js 深度集成
+- **后端框架** - Express, NestJS, Fastify 专业支持
+
+### 🎯 测试质量革命性提升
+- **边界条件检测** - 15+ 类型自动识别
+- **Flaky 预防** - 6种模式检测 + 自动修复
+- **可读性优化** - AAA 模式强制 + 命名优化
+
+### ⚡ 性能与成本优化
+- **Prompt 压缩** - AST 级别，40-60% Token 节省
+- **批量生成** - 智能分组，5-10x 加速
+- **三层缓存** - L1/L2/L3，60%+ 命中率
+
+### 🔧 企业级框架支持
+- **测试迁移** - Jest↔Vitest, Cypress↔Playwright
+- **最佳实践** - 50+ 规则自动检测
+- **Monorepo** - 5种工具智能支持
+
+[查看 v0.8.0 完整更新 →](GITHUB_RELEASE_v0.8.0.md) | [快速开始指南 →](docs/release-notes/v0.8.0/QUICK_START_v0.8.0.md)
 
 ---
 
@@ -42,7 +68,7 @@
 - **向量搜索** - Query Expansion + HyDE优化
 - **Token计算** - 0-1ms极速计算（1000 chunks）
 
-[查看完整更新日志 →](docs/release-notes/v0.7.0/CHANGELOG_v0.7.0.md) | [快速开始指南 →](docs/release-notes/v0.7.0/QUICK_START_v0.7.0.md)
+[查看 v0.7.0 更新日志 →](docs/release-notes/v0.7.0/CHANGELOG_v0.7.0.md) | [快速开始指南 →](docs/release-notes/v0.7.0/QUICK_START_v0.7.0.md)
 
 ---
 
@@ -79,9 +105,11 @@ TestMind is an **AI-driven full-stack testing platform** designed for 1-10 perso
 ## 📚 Documentation
 
 **🚀 Getting Started**:
-- [Quick Start (v0.7.0)](docs/release-notes/v0.7.0/QUICK_START_v0.7.0.md) - 5分钟上手指南 ⭐ NEW
-- [Migration Guide (v0.6 → v0.7)](docs/release-notes/v0.7.0/MIGRATION_GUIDE_v0.6_to_v0.7.md) - 升级指南 ⭐ NEW
-- [Release Notes](docs/release-notes/v0.7.0/RELEASE_NOTES_v0.7.0.md) - 完整发布说明 ⭐ NEW
+- [Quick Start (v0.8.0)](docs/release-notes/v0.8.0/QUICK_START_v0.8.0.md) - 5分钟上手指南 ⭐ NEW
+- [Migration Guide (v0.7 → v0.8)](docs/release-notes/v0.8.0/MIGRATION_GUIDE_v0.7_to_v0.8.md) - 升级指南 ⭐ NEW
+- [Release Notes v0.8.0](GITHUB_RELEASE_v0.8.0.md) - 完整发布说明 ⭐ NEW
+- [Quick Start (v0.7.0)](docs/release-notes/v0.7.0/QUICK_START_v0.7.0.md) - v0.7.0 指南
+- [Migration Guide (v0.6 → v0.7)](docs/release-notes/v0.7.0/MIGRATION_GUIDE_v0.6_to_v0.7.md) - v0.7.0 升级指南
 
 **📖 API Reference**:
 - [Self-Healing API](docs/api-reference/self-healing.md) - 浏览器适配器、定位引擎、失败分类
