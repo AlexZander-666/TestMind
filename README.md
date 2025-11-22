@@ -1,6 +1,8 @@
-# 🧠 TestMind v0.6.0 - AI-Powered Full-Stack Testing Platform
+# 🧠 TestMind - AI-Powered Full-Stack Testing Platform
 
-**让 AI 成为你的测试工程师 - 生成、维护、修复你的整个测试套件**
+> **Transform Your Testing with AI** - Generate, maintain, and fix your entire test suite automatically
+
+**Current Version**: v0.6.0 | **License**: MIT | **Language**: TypeScript
 
 [![Version](https://img.shields.io/badge/version-0.6.0-blue)](https://github.com/AlexZander-666/TestMind/releases)
 [![Tests](https://img.shields.io/badge/tests-97%25%20passing-success)](https://github.com/AlexZander-666/TestMind)
@@ -14,37 +16,37 @@
 
 ## 🎯 What's New in v0.6.0
 
-### 🏥 企业级自愈引擎
-- **70%+ 自愈成功率** - 生产环境验证
-- **5级定位策略** - ID → CSS → XPath → Visual → Semantic
-- **浏览器适配器** - Playwright、Cypress原生支持
-- **智能失败分类** - 7种失败类型自动识别
+### 🏥 Enterprise-Grade Self-Healing Engine
+- **70%+ Self-healing Success Rate** - Production verified
+- **5-Level Locator Strategy** - ID → CSS → XPath → Visual → Semantic
+- **Browser Adapters** - Native Playwright & Cypress support
+- **Smart Failure Classification** - 7 failure types auto-detected
 
-### 🗄️ 向量数据库集成
-- **LanceDB完整支持** - 高性能向量存储
-- **混合搜索引擎** - 向量+关键词+依赖关系融合
-- **0.92+上下文相关性** - 业界领先的检索精度
-- **成本优化** - 增量更新，$0.02/1M tokens
+### 🗄️ Vector Database Integration
+- **Full LanceDB Support** - High-performance vector storage
+- **Hybrid Search Engine** - Vector + keyword + dependency fusion
+- **0.92+ Context Relevance** - Industry-leading retrieval accuracy
+- **Cost Optimization** - Incremental updates, $0.02/1M tokens
 
-### 🔄 CI/CD深度自动化
-- **自动测试修复工作流** - GitHub Actions/GitLab CI 集成
-- **覆盖率缺口分析** - 智能识别未覆盖代码
-- **性能回归检测** - 自动对比基线
-- **测试建议生成** - AI驱动的测试优先级排序
+### 🔄 Deep CI/CD Automation
+- **Auto Test Fix Workflow** - GitHub Actions/GitLab CI integration
+- **Coverage Gap Analysis** - Smart uncovered code detection
+- **Performance Regression Detection** - Auto baseline comparison
+- **Test Suggestion Generation** - AI-driven test prioritization
 
-### 🎯 增强的测试框架支持
-- **Enhanced Cypress** - 视觉回归+网络存根
-- **Enhanced Playwright** - 多浏览器并行+追踪
-- **Vitest Browser Mode** - 快速 HMR + 原生 ESM
-- **WebdriverIO** - 跨平台移动测试支持
+### 🎯 Enhanced Test Framework Support
+- **Enhanced Cypress** - Visual regression + network stubbing
+- **Enhanced Playwright** - Multi-browser parallel + tracing
+- **Vitest Browser Mode** - Fast HMR + native ESM
+- **WebdriverIO** - Cross-platform mobile testing
 
-### 💰 成本优化系统
-- **智能模型选择** - GPT-4o-mini vs GPT-4
-- **Prompt压缩** - 最高70%Token节省
-- **批量处理** - 100个chunks/批次
-- **实时成本追踪** - 详细的成本分析报告
+### 💰 Cost Optimization System
+- **Smart Model Selection** - GPT-4o-mini vs GPT-4
+- **Prompt Compression** - Up to 70% token savings
+- **Batch Processing** - 100 chunks/batch
+- **Real-time Cost Tracking** - Detailed cost analysis reports
 
-[查看完整更新日志 →](docs/release-notes/v0.6.0/CHANGELOG_v0.6.0.md) | [快速开始指南 →](docs/release-notes/v0.6.0/QUICK_START_v0.6.0.md)
+[View Full Changelog →](docs/release-notes/v0.6.0/CHANGELOG_v0.6.0.md) | [Quick Start Guide →](docs/release-notes/v0.6.0/QUICK_START_v0.6.0.md)
 
 ---
 
