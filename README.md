@@ -1,12 +1,29 @@
-# 🧠 TestMind - AI-Powered Full-Stack Testing Platform
+# 🧠 TestMind - AI-Powered Test Automation Platform
+
+<div align="center">
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](package.json)
 [![Node](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](package.json)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Documentation](https://img.shields.io/badge/docs-testmind.io-blue.svg)](https://docs.testmind.io)
-[![Discord](https://img.shields.io/badge/Discord-Join%20Us-7289da)](https://discord.gg/testmind)
+
+**[Documentation](https://docs.testmind.io) | [Commercial Options](docs/COMMERCIAL.md) | [Getting Started](#-quick-start) | [Demo](https://demo.testmind.io)**
+
+</div>
+
+## ✨ What is TestMind?
+
+TestMind is an **enterprise-grade AI-powered test automation platform** that revolutionizes how teams write, maintain, and execute tests. With advanced self-healing capabilities and intelligent test generation, TestMind reduces testing effort by 80% while improving code quality.
+
+### 🎯 Key Features
+
+- **🤖 AI Test Generation** - Automatically generate comprehensive test suites from your code
+- **🔧 Self-Healing Tests** - Tests that fix themselves when UI changes
+- **📊 Coverage Analysis** - Real-time coverage tracking with heatmaps
+- **🚀 Multi-Framework Support** - Works with Jest, Vitest, Cypress, Playwright, and more
+- **🔒 Security Testing** - Built-in vulnerability scanning and compliance checks
+- **📈 Performance Monitoring** - Track test performance and optimization opportunities
 
 ---
 
@@ -337,63 +354,25 @@ testmind/
 
 ---
 
-## 🎯 Project Stats
+## 📖 Documentation
 
-**Code Quality:**
-- 122 tests (116 passing, 95%)
-- 88% code coverage  
-- 90/100 engineering maturity
+- **[Full Documentation](docs/)** - Complete guides and API reference
+- **[Commercial Options](docs/COMMERCIAL.md)** - Enterprise features and pricing
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute
+- **[Security Policy](SECURITY.md)** - Report security issues
 
-**Performance:**
-- 300x faster than NFR targets
-- Sub-second analysis for most projects
+## 🤝 Community & Support
 
-**Development:**
-- Started: Oct 2025
-- Current: v0.3.0
-- Status: Active development
-
----
-
-## 💬 Feedback & Support
-
-**We need your feedback!** This is a beta release.
-
-- 🐛 [Report bugs](https://github.com/yourusername/testmind/issues)
-- 💡 [Feature requests](https://github.com/yourusername/testmind/discussions)
-- ⭐ Star us if TestMind helped you!
-- 📧 Email: feedback@testmind.dev (if applicable)
-
-**Found an issue?** We typically respond within 24 hours.
-
----
-
-## 🤝 Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
----
+- **GitHub Issues**: [Report bugs or request features](https://github.com/AlexZander-666/TestMind/issues)
+- **Discussions**: [Ask questions and share ideas](https://github.com/AlexZander-666/TestMind/discussions)
+- **Commercial Support**: [sales@testmind.io](mailto:sales@testmind.io)
 
 ## 📜 License
 
-MIT License - see [LICENSE](LICENSE)
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🙏 Acknowledgments
-
-Built with:
-- Tree-sitter (code parsing)
-- LangChain (LLM orchestration)
-- OpenAI GPT-4 (test generation)
-
-Inspired by best practices in software engineering and AI-assisted development.
-
----
-
-**Status:** v0.5.0-beta  
-**Quality:** A+ architecture design, 5 core differentiating capabilities  
-**Performance:** 300x faster than manual testing, 80% healing success rate target  
-**Frameworks:** 6 supported (Jest, Vitest, Cypress, Playwright, RTL, GraphQL)
-
-Made with care by developers who believe testing should be fast and reliable. 🚀
+<div align="center">
+Made with ❤️ by the TestMind Team
+</div>
