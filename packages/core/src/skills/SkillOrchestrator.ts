@@ -11,6 +11,9 @@
 
 import type { Skill, SkillContext, SkillResult, CodeChange } from './Skill';
 import type { SkillRegistry } from './SkillRegistry';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('SkillOrchestrator');
 
 export interface OrchestratorOptions {
   // Diff-first: Always show changes before applying
@@ -82,8 +85,8 @@ export class SkillOrchestrator {
 
     // Multiple skills match - need disambiguation
     // For now, use the first one (future: prompt user or use LLM to decide)
-    console.log(`[SkillOrchestrator] Multiple skills can handle request: ${candidates.map(s => s.name).join(', ')}`);
-    console.log(`[SkillOrchestrator] Using: ${candidates[0]!.name}`);
+    logger.info(`[SkillOrchestrator] Multiple skills can handle request: ${candidates.map(s => s.name).join(', ')}`);
+    logger.info(`[SkillOrchestrator] Using: ${candidates[0]!.name}`);
     
     return this.executeSkillInternal(candidates[0]!, context);
   }
@@ -103,7 +106,7 @@ export class SkillOrchestrator {
 
       // Stop on first failure (unless configured otherwise)
       if (!result.success) {
-        console.warn(`[SkillOrchestrator] Skill ${skillName} failed, stopping sequence`);
+        logger.warn(`[SkillOrchestrator] Skill ${skillName} failed, stopping sequence`);
         break;
       }
     }
@@ -138,7 +141,7 @@ export class SkillOrchestrator {
     const startTime = Date.now();
 
     try {
-      console.log(`[SkillOrchestrator] Executing skill: ${skill.name}`);
+      logger.info(`[SkillOrchestrator] Executing skill: ${skill.name}`);
 
       // Validate context
       if (skill.validate) {
@@ -172,13 +175,13 @@ export class SkillOrchestrator {
         await this.showDiffForReview(result.changes);
       }
 
-      console.log(`[SkillOrchestrator] Skill completed: ${skill.name} (${result.duration}ms)`);
+      logger.info(`[SkillOrchestrator] Skill completed: ${skill.name} (${result.duration}ms)`);
       
       return result;
 
     } catch (error: any) {
       const duration = Date.now() - startTime;
-      console.error(`[SkillOrchestrator] Skill failed: ${skill.name}`, error);
+      logger.error(`[SkillOrchestrator] Skill failed: ${skill.name}`, error);
 
       return {
         success: false,
@@ -211,25 +214,25 @@ export class SkillOrchestrator {
    * This is a placeholder - actual implementation would show interactive diff
    */
   private async showDiffForReview(changes: CodeChange[]): Promise<void> {
-    console.log('\n' + '='.repeat(80));
-    console.log('📝 Proposed Changes (Diff-First Review)');
-    console.log('='.repeat(80) + '\n');
+    logger.info('\n' + '='.repeat(80));
+    logger.info('📝 Proposed Changes (Diff-First Review)');
+    logger.info('='.repeat(80) + '\n');
 
     for (const change of changes) {
-      console.log(`${change.type.toUpperCase()}: ${change.path}`);
+      logger.info(`${change.type.toUpperCase()}: ${change.path}`);
       if (change.description) {
-        console.log(`  ${change.description}`);
+        logger.info(`  ${change.description}`);
       }
       if (change.diff) {
-        console.log(change.diff);
+        logger.info(change.diff);
       }
-      console.log();
+      logger.info();
     }
 
-    console.log('='.repeat(80));
-    console.log('Review changes above before applying');
-    console.log('Use /apply to commit, /reject to discard');
-    console.log('='.repeat(80) + '\n');
+    logger.info('='.repeat(80));
+    logger.info('Review changes above before applying');
+    logger.info('Use /apply to commit, /reject to discard');
+    logger.info('='.repeat(80) + '\n');
   }
 
   /**
@@ -238,7 +241,7 @@ export class SkillOrchestrator {
    */
   async applyChanges(changes: CodeChange[]): Promise<void> {
     // TODO: Integrate with GitAutomation
-    console.log(`[SkillOrchestrator] Applying ${changes.length} changes...`);
+    logger.info(`[SkillOrchestrator] Applying ${changes.length} changes...`);
     
     // Write files
     // Create Git commit

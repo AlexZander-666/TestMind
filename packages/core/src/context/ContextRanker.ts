@@ -44,9 +44,9 @@ export class ContextRanker {
   }
 
   /**
-   * Rank function contexts
+   * Rank function contexts or code chunks
    */
-  rankContexts(contexts: FunctionContext[]): RankedContext[] {
+  rankContexts(contexts: (FunctionContext | CodeChunk)[]): RankedContext[] {
     return contexts.map(context => ({
       context,
       score: 1.0,  // TODO: implement proper scoring

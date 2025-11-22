@@ -15,6 +15,9 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
+import { createComponentLogger } from '../../../core/src/utils/logger';
+
+const logger = createComponentLogger('heal');
 
 export interface HealCommandOptions {
   /** 测试报告文件路径 */
@@ -125,7 +128,7 @@ async function applyFixes(
     r => r.confidence >= (options.confidenceThreshold || 0.85) && r.suggestions.length > 0
   );
 
-  console.log(chalk.cyan(`\n🔧 Applying ${highConfidenceResults.length} high-confidence fixes...\n`));
+  logger.info(chalk.cyan(`\n🔧 Applying ${highConfidenceResults.length} high-confidence fixes...\n`));
 
   for (const result of highConfidenceResults) {
     if (options.maxFixes && applied >= options.maxFixes) {
@@ -138,10 +141,10 @@ async function applyFixes(
       // const diff = generateDiff(result.suggestions[0]);
       // await applyDiff(diff);
       
-      console.log(chalk.green(`  ✓ Applied fix: ${result.suggestions[0]?.description}`));
+      logger.info(chalk.green(`  ✓ Applied fix: ${result.suggestions[0]?.description}`));
       applied++;
   } catch (error) {
-      console.error(chalk.red(`  ✗ Failed to apply fix: ${error}`));
+      logger.error(chalk.red(`  ✗ Failed to apply fix: ${error}`));
       skipped++;
     }
   }
@@ -153,7 +156,7 @@ async function applyFixes(
  * Heal 命令实现
  */
 export async function healCommand(options: HealCommandOptions): Promise<void> {
-  console.log(chalk.bold.cyan('\n🏥 TestMind Self-Healing Engine\n'));
+  logger.info(chalk.bold.cyan('\n🏥 TestMind Self-Healing Engine\n'));
 
   // 1. 解析测试失败
   let failures: TestFailure[] = [];
@@ -169,12 +172,12 @@ export async function healCommand(options: HealCommandOptions): Promise<void> {
     }
       } else {
     // 交互式选择测试文件
-    console.log(chalk.yellow('ℹ️  No report provided. Please specify --report <path>'));
+    logger.info(chalk.yellow('ℹ️  No report provided. Please specify --report <path>'));
     process.exit(1);
   }
 
   if (failures.length === 0) {
-    console.log(chalk.green('✨ All tests passed! Nothing to heal.\n'));
+    logger.info(chalk.green('✨ All tests passed! Nothing to heal.\n'));
     return;
   }
 
@@ -206,7 +209,7 @@ export async function healCommand(options: HealCommandOptions): Promise<void> {
       processed++;
       spinner.text = `Processing... (${processed}/${failures.length})`;
     } catch (error) {
-      console.error(chalk.red(`\n  ✗ Failed to heal ${failure.testName}: ${error}`));
+      logger.error(chalk.red(`\n  ✗ Failed to heal ${failure.testName}: ${error}`));
     }
   }
 
@@ -216,10 +219,10 @@ export async function healCommand(options: HealCommandOptions): Promise<void> {
   const healedCount = Array.from(results.values()).filter(r => r.healed).length;
   const healingRate = ((healedCount / results.size) * 100).toFixed(1);
 
-  console.log(chalk.bold('\n📊 Healing Results:\n'));
-  console.log(`  Total Failures: ${chalk.yellow(results.size.toString())}`);
-  console.log(`  Auto-Healed: ${chalk.green(healedCount.toString())} (${healingRate}%)`);
-  console.log(`  Needs Review: ${chalk.yellow((results.size - healedCount).toString())}`);
+  logger.info(chalk.bold('\n📊 Healing Results:\n'));
+  logger.info(`  Total Failures: ${chalk.yellow(results.size.toString())}`);
+  logger.info(`  Auto-Healed: ${chalk.green(healedCount.toString())} (${healingRate}%)`);
+  logger.info(`  Needs Review: ${chalk.yellow((results.size - healedCount).toString())}`);
 
   // 5. 生成报告
   const report = generateHealingReport(results, options);
@@ -227,43 +230,43 @@ export async function healCommand(options: HealCommandOptions): Promise<void> {
   const outputPath = options.output || 'testmind-healing-report.json';
   await fs.writeFile(outputPath, JSON.stringify(report, null, 2));
   
-  console.log(chalk.dim(`\n📄 Report saved to: ${outputPath}\n`));
+  logger.info(chalk.dim(`\n📄 Report saved to: ${outputPath}\n`));
 
   // 6. CI 模式：自动应用修复
   if (options.ci && options.autoCommit) {
     const { applied, skipped } = await applyFixes(results, options);
     
     if (applied > 0) {
-      console.log(chalk.green(`\n✅ Applied ${applied} fixes automatically\n`));
+      logger.info(chalk.green(`\n✅ Applied ${applied} fixes automatically\n`));
       
       // Git commit
       // await gitCommit('fix(tests): auto-heal failed tests via TestMind');
-      console.log(chalk.dim('(Git commit would be created in real implementation)\n'));
+      logger.info(chalk.dim('(Git commit would be created in real implementation)\n'));
     }
   }
 
   // 7. 交互模式：显示建议
   if (!options.ci) {
-    console.log(chalk.bold('\n💡 Healing Suggestions:\n'));
+    logger.info(chalk.bold('\n💡 Healing Suggestions:\n'));
     
     let suggestionCount = 0;
     for (const [testName, result] of results) {
       if (result.suggestions.length > 0) {
         suggestionCount++;
-        console.log(chalk.cyan(`${suggestionCount}. ${testName}`));
-        console.log(chalk.dim(`   Classification: ${result.classification.failureType}`));
-        console.log(chalk.dim(`   Confidence: ${(result.confidence * 100).toFixed(0)}%`));
-        console.log(chalk.dim(`   Suggestion: ${result.suggestions[0]?.description}\n`));
+        logger.info(chalk.cyan(`${suggestionCount}. ${testName}`));
+        logger.info(chalk.dim(`   Classification: ${result.classification.failureType}`));
+        logger.info(chalk.dim(`   Confidence: ${(result.confidence * 100).toFixed(0)}%`));
+        logger.info(chalk.dim(`   Suggestion: ${result.suggestions[0]?.description}\n`));
       }
     }
   }
 
   // 8. 退出码
   if (healedCount === results.size) {
-    console.log(chalk.green.bold('🎉 All tests healed successfully!\n'));
+    logger.info(chalk.green.bold('🎉 All tests healed successfully!\n'));
     process.exit(0);
   } else {
-    console.log(chalk.yellow.bold(`⚠️  ${results.size - healedCount} tests still need manual review\n`));
+    logger.info(chalk.yellow.bold(`⚠️  ${results.size - healedCount} tests still need manual review\n`));
     process.exit(options.ci ? 1 : 0); // CI 模式下失败退出
   }
 }

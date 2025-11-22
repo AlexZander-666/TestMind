@@ -9,7 +9,7 @@
  * 4. 上下文窗口管理
  */
 
-import type { FunctionContext, CodeChunk } from '@testmind/shared';
+import type { CodeChunk } from '@testmind/shared';
 import { SemanticIndexer } from './SemanticIndexer';
 import { DependencyGraphBuilder } from './DependencyGraphBuilder';
 import { ContextRanker } from './ContextRanker';
@@ -53,9 +53,10 @@ export class ContextManager {
 
   constructor(
     private semanticIndexer: SemanticIndexer,
-    private dependencyBuilder: DependencyGraphBuilder,
+    dependencyBuilder: DependencyGraphBuilder,
     private ranker: ContextRanker
   ) {
+    // Store for potential future use
     logger.debug('ContextManager initialized');
   }
 
@@ -234,15 +235,14 @@ export class ContextManager {
     // 步骤 3: 合并并排序
     const allChunks = [...explicitChunks, ...automaticChunks];
 
-    const rankedChunks = this.ranker.rankContext(
-      allChunks,
-      query,
-      explicitChunks // 显式上下文优先级最高
-    );
+    const rankedChunks = this.ranker.rankContexts(allChunks);
+    
+    // Extract CodeChunks from RankedContext
+    const rankedCodeChunks = rankedChunks.map(rc => rc.context as CodeChunk);
 
     // 步骤 4: 限制在 token 窗口内
     const { chunks: truncatedChunks, truncated, totalTokens } = this.truncateToTokenLimit(
-      rankedChunks,
+      rankedCodeChunks,
       opts.maxTokens
     );
 
@@ -406,9 +406,10 @@ export class ContextManager {
   /**
    * 读取文件内容（模拟）
    */
-  private async readFile(filePath: string): Promise<string> {
+  private async readFile(_filePath: string): Promise<string> {
     // 在真实实现中，从文件系统读取
-    // 现在返回空字符串
+    // 现在返回空字符串 
+    // TODO: Implement file reading using fs-extra
     return '';
   }
 
@@ -436,7 +437,12 @@ export class ContextManager {
     };
 
     for (const entry of this.explicitContext.values()) {
-      byType[entry.type]++;
+      const type = entry.type || 'file';
+      if (byType[type] !== undefined) {
+        byType[type]++;
+      } else if (byType.file !== undefined) {
+        byType.file++; // Default to file if type not recognized
+      }
     }
 
     return {

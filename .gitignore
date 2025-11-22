@@ -46,36 +46,21 @@ pnpm-debug.log*
 .testmind
 *.testmind.db
 *.testmind.db-journal
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+testmind.db
+vectors.db
+license.json
 
 # Archive (internal documents)
 archive/
 *.log
 logs/
 
+# Security and Commercial
+*.key
+*.pem
+*.cert
+*.p12
+/packages/core/src/commercial/*
+/packages/core/src/enterprise/*
+/testmind-pro/
+/testmind-enterprise/

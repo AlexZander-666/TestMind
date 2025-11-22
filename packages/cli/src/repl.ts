@@ -15,6 +15,9 @@ import { ContextManager } from '@testmind/core';
 import { GitAutomation } from '@testmind/core';
 import { loadConfig } from './utils/config';
 import type { ProjectConfig } from '@testmind/shared';
+import { createComponentLogger } from '../../core/src/utils/logger';
+
+const logger = createComponentLogger('repl');
 
 interface SessionState {
   contextManager: ContextManager;
@@ -61,7 +64,7 @@ export class InteractiveSession {
         try {
           await this.handleCommand(input);
         } catch (error: any) {
-          console.error(chalk.red('Error:'), error.message);
+          logger.error(chalk.red('Error:'), error.message);
         }
 
         this.rl.prompt();
@@ -69,12 +72,12 @@ export class InteractiveSession {
 
       this.rl.on('close', async () => {
         await this.cleanup();
-        console.log(chalk.blue('\n👋 Goodbye!'));
+        logger.info(chalk.blue('\n👋 Goodbye!'));
         process.exit(0);
       });
 
     } catch (error: any) {
-      console.error(chalk.red('Failed to start session:'), error.message);
+      logger.error(chalk.red('Failed to start session:'), error.message);
       process.exit(1);
     }
   }
@@ -102,8 +105,8 @@ export class InteractiveSession {
    * Show welcome message
    */
   private showWelcome(): void {
-    console.log(chalk.bold('\n🧠 TestMind Interactive Session\n'));
-    console.log('Type ' + chalk.cyan('/help') + ' for available commands\n');
+    logger.info(chalk.bold('\n🧠 TestMind Interactive Session\n'));
+    logger.info('Type ' + chalk.cyan('/help') + ' for available commands\n');
   }
 
   /**
@@ -138,35 +141,35 @@ export class InteractiveSession {
 
       case '/add':
         if (args.length === 0) {
-          console.log(chalk.yellow('Usage: /add <file>'));
+          logger.info(chalk.yellow('Usage: /add <file>'));
           break;
         }
         await this.state!.contextManager.addToContext(args[0]!);
-        console.log(chalk.green(`✓ Added to context: ${args[0]}`));
+        logger.info(chalk.green(`✓ Added to context: ${args[0]}`));
         break;
 
       case '/focus':
         if (args.length === 0) {
-          console.log(chalk.yellow('Usage: /focus <file>::<function>'));
+          logger.info(chalk.yellow('Usage: /focus <file>::<function>'));
           break;
         }
         const [file, func] = args[0]!.split('::');
         if (!file || !func) {
-          console.log(chalk.yellow('Usage: /focus <file>::<function>'));
+          logger.info(chalk.yellow('Usage: /focus <file>::<function>'));
           break;
         }
         await this.state!.contextManager.focusOn(file, func);
-        console.log(chalk.green(`✓ Focused on: ${file}::${func}`));
+        logger.info(chalk.green(`✓ Focused on: ${file}::${func}`));
         break;
 
       case '/context':
         const snapshot = this.state!.contextManager.getCurrentContext();
-        console.log(snapshot.message);
+        logger.info(snapshot.message);
         break;
 
       case '/clear':
         this.state!.contextManager.clearContext();
-        console.log(chalk.green('✓ Context cleared'));
+        logger.info(chalk.green('✓ Context cleared'));
         break;
 
       case '/apply':
@@ -187,8 +190,8 @@ export class InteractiveSession {
         break;
 
       default:
-        console.log(chalk.yellow(`Unknown command: ${command}`));
-        console.log(chalk.gray('Type /help for available commands'));
+        logger.info(chalk.yellow(`Unknown command: ${command}`));
+        logger.info(chalk.gray('Type /help for available commands'));
     }
   }
 
@@ -196,47 +199,47 @@ export class InteractiveSession {
    * Handle natural language input
    */
   private async handleNaturalLanguage(input: string): Promise<void> {
-    console.log(chalk.blue('💭 Processing:'), input);
+    logger.info(chalk.blue('💭 Processing:'), input);
     
     // Build hybrid context
     const hybridContext = await this.state!.contextManager.buildHybridContext(input);
     
-    console.log(chalk.gray(`Context: ${hybridContext.contextSize}`));
+    logger.info(chalk.gray(`Context: ${hybridContext.contextSize}`));
     
     // TODO: Implement LLM integration for natural language processing
     // For now, show what would be sent to LLM
-    console.log(chalk.yellow('\n⚠️  Natural language processing not yet implemented'));
-    console.log(chalk.gray('This will be connected to LLM in the next phase'));
-    console.log(chalk.gray('\nFor now, please use slash commands:'));
-    console.log(chalk.gray('  /add <file>          - Add file to context'));
-    console.log(chalk.gray('  /focus <file>::<fn>  - Focus on function'));
-    console.log(chalk.gray('  /context             - Show current context'));
+    logger.info(chalk.yellow('\n⚠️  Natural language processing not yet implemented'));
+    logger.info(chalk.gray('This will be connected to LLM in the next phase'));
+    logger.info(chalk.gray('\nFor now, please use slash commands:'));
+    logger.info(chalk.gray('  /add <file>          - Add file to context'));
+    logger.info(chalk.gray('  /focus <file>::<fn>  - Focus on function'));
+    logger.info(chalk.gray('  /context             - Show current context'));
   }
 
   /**
    * Show help message
    */
   private showHelp(): void {
-    console.log(chalk.bold('\n📖 Available Commands:\n'));
+    logger.info(chalk.bold('\n📖 Available Commands:\n'));
     
-    console.log(chalk.cyan('Context Management:'));
-    console.log('  /add <file>           Add file to context');
-    console.log('  /focus <file>::<fn>   Focus on specific function');
-    console.log('  /context              Show current context');
-    console.log('  /clear                Clear all context\n');
+    logger.info(chalk.cyan('Context Management:'));
+    logger.info('  /add <file>           Add file to context');
+    logger.info('  /focus <file>::<fn>   Focus on specific function');
+    logger.info('  /context              Show current context');
+    logger.info('  /clear                Clear all context\n');
     
-    console.log(chalk.cyan('Actions:'));
-    console.log('  /apply                Apply pending changes');
-    console.log('  /undo                 Undo last commit');
-    console.log('  /status               Show session status\n');
+    logger.info(chalk.cyan('Actions:'));
+    logger.info('  /apply                Apply pending changes');
+    logger.info('  /undo                 Undo last commit');
+    logger.info('  /status               Show session status\n');
     
-    console.log(chalk.cyan('Session:'));
-    console.log('  /help                 Show this help');
-    console.log('  /exit, /quit          Exit session\n');
+    logger.info(chalk.cyan('Session:'));
+    logger.info('  /help                 Show this help');
+    logger.info('  /exit, /quit          Exit session\n');
     
-    console.log(chalk.gray('Natural Language:'));
-    console.log(chalk.gray('  Just type your request in plain English (coming soon)'));
-    console.log(chalk.gray('  Example: "generate tests for add function"\n'));
+    logger.info(chalk.gray('Natural Language:'));
+    logger.info(chalk.gray('  Just type your request in plain English (coming soon)'));
+    logger.info(chalk.gray('  Example: "generate tests for add function"\n'));
   }
 
   /**
@@ -244,14 +247,14 @@ export class InteractiveSession {
    */
   private async applyPendingChanges(): Promise<void> {
     if (this.state!.pendingChanges.length === 0) {
-      console.log(chalk.yellow('No pending changes to apply'));
+      logger.info(chalk.yellow('No pending changes to apply'));
       return;
     }
 
-    console.log(chalk.blue('Applying changes...'));
+    logger.info(chalk.blue('Applying changes...'));
     
     // TODO: Implement change application logic
-    console.log(chalk.yellow('⚠️  Change application not yet implemented'));
+    logger.info(chalk.yellow('⚠️  Change application not yet implemented'));
   }
 
   /**
@@ -261,9 +264,9 @@ export class InteractiveSession {
     const result = await this.state!.gitAutomation.undoLastCommit();
     
     if (result.success) {
-      console.log(chalk.green('✓ ' + result.message));
+      logger.info(chalk.green('✓ ' + result.message));
     } else {
-      console.log(chalk.yellow(result.message));
+      logger.info(chalk.yellow(result.message));
     }
   }
 
@@ -271,25 +274,25 @@ export class InteractiveSession {
    * Show current session status
    */
   private async showStatus(): Promise<void> {
-    console.log(chalk.bold('\n📊 Session Status:\n'));
+    logger.info(chalk.bold('\n📊 Session Status:\n'));
     
     // Context status
     const snapshot = this.state!.contextManager.getCurrentContext();
-    console.log(chalk.cyan('Context:'));
-    console.log(`  Files: ${snapshot.explicitFiles.length}`);
-    console.log(`  Focus points: ${snapshot.focusPoints.length}`);
-    console.log(`  Estimated tokens: ${snapshot.totalTokens.toLocaleString()}\n`);
+    logger.info(chalk.cyan('Context:'));
+    logger.info(`  Files: ${snapshot.explicitFiles.length}`);
+    logger.info(`  Focus points: ${snapshot.focusPoints.length}`);
+    logger.info(`  Estimated tokens: ${snapshot.totalTokens.toLocaleString()}\n`);
     
     // Git status
-    console.log(chalk.cyan('Git:'));
+    logger.info(chalk.cyan('Git:'));
     const currentBranch = await this.state!.gitAutomation.getCurrentBranch();
-    console.log(`  Branch: ${currentBranch}`);
+    logger.info(`  Branch: ${currentBranch}`);
     const hasChanges = await this.state!.gitAutomation.hasUncommittedChanges();
-    console.log(`  Uncommitted changes: ${hasChanges ? 'Yes' : 'No'}\n`);
+    logger.info(`  Uncommitted changes: ${hasChanges ? 'Yes' : 'No'}\n`);
     
     // Pending changes
-    console.log(chalk.cyan('Pending:'));
-    console.log(`  Changes to apply: ${this.state!.pendingChanges.length}\n`);
+    logger.info(chalk.cyan('Pending:'));
+    logger.info(`  Changes to apply: ${this.state!.pendingChanges.length}\n`);
   }
 
   /**

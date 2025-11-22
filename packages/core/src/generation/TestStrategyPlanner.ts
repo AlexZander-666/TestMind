@@ -3,13 +3,16 @@
  */
 
 import type { FunctionContext, TestStrategy, BoundaryCondition, EdgeCase } from '@testmind/shared';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('TestStrategyPlanner');
 
 export class TestStrategyPlanner {
   /**
    * Plan unit test strategy
    */
   async planUnitTest(context: FunctionContext): Promise<TestStrategy> {
-    console.log(`[TestStrategyPlanner] Planning test for: ${context.signature.name}`);
+    logger.info(`[TestStrategyPlanner] Planning test for: ${context.signature.name}`);
 
     // Analyze function characteristics
     const isComplex = context.complexity.cyclomaticComplexity > 5;
@@ -149,7 +152,7 @@ export class TestStrategyPlanner {
 
     if (isPureFunction) {
       // Pure functions don't need any mocking
-      console.log('[TestStrategyPlanner] Pure function detected, no mocking needed');
+      logger.info('[TestStrategyPlanner] Pure function detected, no mocking needed');
       return {
         dependencies: [],
         mockType: 'partial',

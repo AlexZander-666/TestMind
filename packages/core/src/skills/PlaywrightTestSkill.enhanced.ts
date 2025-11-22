@@ -11,6 +11,9 @@
 
 import { Skill } from './Skill';
 import type { LLMService } from '../llm/LLMService';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('PlaywrightTestSkill_enhanced');
 
 /**
  * Playwright 测试上下文
@@ -99,7 +102,7 @@ export class EnhancedPlaywrightTestSkill {
    * 生成测试代码
    */
   async execute(context: PlaywrightTestContext): Promise<{ code: string }> {
-    console.log(`[PlaywrightTestSkill] Generating enhanced test: ${context.testName}`);
+    logger.info(`[PlaywrightTestSkill] Generating enhanced test: ${context.testName}`);
 
     // 1. 构建增强的 Prompt
     const prompt = this.buildEnhancedPrompt(context);
@@ -297,8 +300,8 @@ test.describe('${browser}', () => {
     const cssLocators = code.match(/page\.locator\(['"]\.[\w-]+['"]\)/g) || [];
     
     for (const locator of cssLocators) {
-      console.warn(`[PlaywrightTestSkill] CSS class locator detected: ${locator}`);
-      console.warn(`  Suggestion: Use page.getByRole(), page.getByTestId(), or page.getByLabel()`);
+      logger.warn(`[PlaywrightTestSkill] CSS class locator detected: ${locator}`);
+      logger.warn(`  Suggestion: Use page.getByRole(), page.getByTestId(), or page.getByLabel()`);
     }
 
     return enhanced;

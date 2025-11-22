@@ -8,6 +8,9 @@ import { ContextManager } from '@testmind/core';
 import { loadConfig } from '../utils/config';
 import * as path from 'path';
 import chalk from 'chalk';
+import { createComponentLogger } from '../../../core/src/utils/logger';
+
+const logger = createComponentLogger('context');
 
 export function createContextCommand(): Command {
   const cmd = new Command('context');
@@ -56,11 +59,11 @@ async function viewContext() {
     const contextManager = new ContextManager(config, projectPath);
 
     const snapshot = contextManager.getCurrentContext();
-    console.log(snapshot.message);
+    logger.info(snapshot.message);
 
     await contextManager.dispose();
   } catch (error) {
-    console.error(chalk.red('Error viewing context:'), error);
+    logger.error(chalk.red('Error viewing context:'), error);
     process.exit(1);
   }
 }
@@ -73,15 +76,15 @@ async function addToContext(file: string) {
 
     await contextManager.addToContext(file);
 
-    console.log(chalk.green(`✓ Added to context: ${file}`));
+    logger.info(chalk.green(`✓ Added to context: ${file}`));
 
     // Show updated context
     const snapshot = contextManager.getCurrentContext();
-    console.log(`\nCurrent context: ${snapshot.explicitFiles.length} files, ${snapshot.totalTokens.toLocaleString()} tokens`);
+    logger.info(`\nCurrent context: ${snapshot.explicitFiles.length} files, ${snapshot.totalTokens.toLocaleString()} tokens`);
 
     await contextManager.dispose();
   } catch (error: any) {
-    console.error(chalk.red('Error adding to context:'), error.message);
+    logger.error(chalk.red('Error adding to context:'), error.message);
     process.exit(1);
   }
 }
@@ -90,8 +93,8 @@ async function focusOn(target: string) {
   try {
     const parts = target.split('::');
     if (parts.length !== 2) {
-      console.error(chalk.red('Error: Invalid format. Use: <file>::<function>'));
-      console.error(chalk.gray('Example: testmind context focus src/utils.ts::formatString'));
+      logger.error(chalk.red('Error: Invalid format. Use: <file>::<function>'));
+      logger.error(chalk.gray('Example: testmind context focus src/utils.ts::formatString'));
       process.exit(1);
     }
 
@@ -103,15 +106,15 @@ async function focusOn(target: string) {
 
     await contextManager.focusOn(file, functionName);
 
-    console.log(chalk.green(`✓ Focused on: ${file}::${functionName}`));
+    logger.info(chalk.green(`✓ Focused on: ${file}::${functionName}`));
 
     // Show updated context
     const snapshot = contextManager.getCurrentContext();
-    console.log(`\nFocus points: ${snapshot.focusPoints.length}`);
+    logger.info(`\nFocus points: ${snapshot.focusPoints.length}`);
 
     await contextManager.dispose();
   } catch (error: any) {
-    console.error(chalk.red('Error focusing:'), error.message);
+    logger.error(chalk.red('Error focusing:'), error.message);
     process.exit(1);
   }
 }
@@ -124,11 +127,11 @@ async function removeFromContext(file: string) {
 
     await contextManager.removeFromContext(file);
 
-    console.log(chalk.green(`✓ Removed from context: ${file}`));
+    logger.info(chalk.green(`✓ Removed from context: ${file}`));
 
     await contextManager.dispose();
   } catch (error: any) {
-    console.error(chalk.red('Error removing from context:'), error.message);
+    logger.error(chalk.red('Error removing from context:'), error.message);
     process.exit(1);
   }
 }
@@ -141,11 +144,11 @@ async function clearContext() {
 
     contextManager.clearContext();
 
-    console.log(chalk.green('✓ Context cleared'));
+    logger.info(chalk.green('✓ Context cleared'));
 
     await contextManager.dispose();
   } catch (error: any) {
-    console.error(chalk.red('Error clearing context:'), error.message);
+    logger.error(chalk.red('Error clearing context:'), error.message);
     process.exit(1);
   }
 }

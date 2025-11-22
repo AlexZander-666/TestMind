@@ -14,6 +14,9 @@ import { LocatorEngine, type ElementDescriptor, type LocatorResult } from './Loc
 import { FailureClassifier, type TestFailure, type ClassificationResult } from './FailureClassifier';
 import { FixSuggester, type FixSuggestion, type FixContext } from './FixSuggester';
 import { IntentTracker, ActionType, type TestIntent } from './IntentTracker';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('SelfHealingEngine');
 
 export interface SelfHealingResult {
   /** 是否成功自愈 */
@@ -362,7 +365,7 @@ export class SelfHealingEngine {
         const result = await this.heal(failure, context);
         results.set(failure.testName, result);
       } catch (error) {
-        console.error(`Failed to heal ${failure.testName}:`, error);
+        logger.error(`Failed to heal ${failure.testName}:`, error);
       }
     }
 

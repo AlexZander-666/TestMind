@@ -15,6 +15,9 @@ import { XPathLocator } from './strategies/XPathLocator';
 import { VisualLocator } from './strategies/VisualLocator';
 import { SemanticLocator } from './strategies/SemanticLocator';
 import type { LLMService } from '../llm/LLMService';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('LocatorEngine');
 
 export interface ElementDescriptor {
   id?: string;
@@ -102,7 +105,7 @@ export class LocatorEngine {
         }
       } catch (error) {
         // 策略失败，继续下一个
-        console.debug(`Strategy ${strategy} failed:`, error);
+        logger.debug(`Strategy ${strategy} failed:`, error);
       }
     }
 

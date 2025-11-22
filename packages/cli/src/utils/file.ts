@@ -3,13 +3,16 @@
  */
 
 import path from 'path';
+import { createComponentLogger } from '../../../core/src/utils/logger';
+
+const logger = createComponentLogger('file');
 
 export const ensureDir = async (dirPath: string): Promise<void> => {
   try {
     const fs = await import('fs/promises');
     await fs.mkdir(dirPath, { recursive: true });
   } catch (error) {
-    console.error(`Failed to create directory: ${dirPath}`, error);
+    logger.error(`Failed to create directory: ${dirPath}`, error);
     throw error;
   }
 };
@@ -21,7 +24,7 @@ export const safeWriteFile = async (filePath: string, content: string): Promise<
     await fs.writeFile(filePath, content, 'utf-8');
     return true;
   } catch (error) {
-    console.error(`Failed to write file: ${filePath}`, error);
+    logger.error(`Failed to write file: ${filePath}`, error);
     return false;
   }
 };

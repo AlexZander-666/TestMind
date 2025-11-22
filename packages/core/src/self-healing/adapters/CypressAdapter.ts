@@ -8,6 +8,9 @@
  */
 
 import type { BrowserAdapter, ElementHandle, BrowserAdapterFactory } from './BrowserAdapter';
+import { createComponentLogger } from '../../utils/logger';
+
+const logger = createComponentLogger('CypressAdapter');
 
 /**
  * Cypress 全局对象类型（简化）
@@ -144,7 +147,7 @@ export class CypressAdapter implements BrowserAdapter {
    * 实际使用中需要配合 Cypress 的截图插件
    */
   async screenshot(element: ElementHandle): Promise<Buffer> {
-    console.warn('[CypressAdapter] Element screenshots not fully supported in Cypress adapter');
+    logger.warn('[CypressAdapter] Element screenshots not fully supported in Cypress adapter');
     // Cypress 截图主要用于调试，不返回 Buffer
     // 这里返回空 Buffer，实际项目中可能需要使用插件
     return Buffer.from('');
@@ -157,7 +160,7 @@ export class CypressAdapter implements BrowserAdapter {
     return new Promise((resolve) => {
       this.cy.screenshot({ capture: 'viewport' });
       // Cypress 截图保存到文件，这里返回空 Buffer
-      console.warn('[CypressAdapter] Page screenshots saved to file, not returned as Buffer');
+      logger.warn('[CypressAdapter] Page screenshots saved to file, not returned as Buffer');
       resolve(Buffer.from(''));
     });
   }

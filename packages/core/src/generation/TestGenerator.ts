@@ -10,6 +10,8 @@ import { LLMService } from '../llm/LLMService';
 import { createComponentLogger } from '../utils/logger';
 import { metrics, MetricNames } from '../utils/metrics';
 
+const logger = createComponentLogger('TestGenerator');
+
 export class TestGenerator {
   private planner: TestStrategyPlanner;
   private promptBuilder: PromptBuilder;
@@ -271,7 +273,7 @@ export class TestGenerator {
     modulePath: string,
     projectId: string
   ): Promise<TestSuite> {
-    console.log(`[TestGenerator] Generating integration test for: ${modulePath}`);
+    logger.info(`[TestGenerator] Generating integration test for: ${modulePath}`);
 
     // TODO: Implement integration test generation
     // 1. Analyze module boundaries
@@ -289,7 +291,7 @@ export class TestGenerator {
     userStory: string,
     projectId: string
   ): Promise<TestSuite> {
-    console.log(`[TestGenerator] Generating E2E test for: ${userStory}`);
+    logger.info(`[TestGenerator] Generating E2E test for: ${userStory}`);
 
     // TODO: Implement E2E test generation
     throw new Error('E2E test generation not yet implemented');
@@ -405,25 +407,25 @@ export class TestGenerator {
     // Check 1: Must contain at least one test case
     const hasTestCase = code.includes('it(') || code.includes('test(');
     if (!hasTestCase) {
-      console.warn(`[TestGenerator] No test cases found for ${functionName}`);
+      logger.warn(`[TestGenerator] No test cases found for ${functionName}`);
       return false;
     }
 
     // Check 2: Must contain assertions
     const hasAssertions = code.includes('expect(');
     if (!hasAssertions) {
-      console.warn(`[TestGenerator] No assertions found for ${functionName}`);
+      logger.warn(`[TestGenerator] No assertions found for ${functionName}`);
       return false;
     }
 
     // Check 3: Must have reasonable length (>20 lines for actual test)
     const lines = code.split('\n').filter(line => line.trim().length > 0);
     if (lines.length < 10) {
-      console.warn(`[TestGenerator] Test too short for ${functionName}: ${lines.length} lines`);
+      logger.warn(`[TestGenerator] Test too short for ${functionName}: ${lines.length} lines`);
       return false;
     }
 
-    console.log(`[TestGenerator] Test quality validation passed for ${functionName}`);
+    logger.info(`[TestGenerator] Test quality validation passed for ${functionName}`);
     return true;
   }
 }

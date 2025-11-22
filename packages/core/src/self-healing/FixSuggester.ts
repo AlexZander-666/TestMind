@@ -10,6 +10,9 @@
 import type { LLMService } from '../llm/LLMService';
 import type { TestFailure, FailureType, ClassificationResult } from './FailureClassifier';
 import type { ElementDescriptor, LocatorStrategy } from './LocatorEngine';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('FixSuggester');
 
 export interface FixSuggestion {
   type: FixType;
@@ -86,7 +89,7 @@ export class FixSuggester {
           suggestions.push(llmSuggestion);
         }
       } catch (error) {
-        console.error('Failed to generate LLM suggestion:', error);
+        logger.error('Failed to generate LLM suggestion:', error);
       }
     }
 
@@ -306,7 +309,7 @@ Format your response as JSON:
         alternativeApproaches: parsed.alternativeApproaches
       };
     } catch (error) {
-      console.error('LLM suggestion failed:', error);
+      logger.error('LLM suggestion failed:', error);
       return null;
     }
   }

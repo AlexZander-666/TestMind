@@ -7,20 +7,23 @@ import ora from 'ora';
 import Table from 'cli-table3';
 import { TestEvaluator } from '@testmind/core';
 import { loadConfig } from '../utils/config';
+import { createComponentLogger } from '../../../core/src/utils/logger';
+
+const logger = createComponentLogger('analyze');
 
 export interface AnalyzeOptions {
   all?: boolean;
 }
 
 export const analyzeCommand = async (suiteId: string | undefined, options: AnalyzeOptions) => {
-  console.log(chalk.bold.cyan('\n🧠 TestMind - Test Quality Analysis\n'));
+  logger.info(chalk.bold.cyan('\n🧠 TestMind - Test Quality Analysis\n'));
 
   const spinner = ora('Loading configuration...').start();
   const config = await loadConfig();
 
   if (!config) {
     spinner.fail('Not initialized');
-    console.log(chalk.red('\n❌ TestMind is not initialized in this project.\n'));
+    logger.info(chalk.red('\n❌ TestMind is not initialized in this project.\n'));
     process.exit(1);
   }
 
@@ -49,17 +52,17 @@ export const analyzeCommand = async (suiteId: string | undefined, options: Analy
       displayQualityReport();
     } else {
       spinner.warn('No suite ID provided');
-      console.log(chalk.yellow('\n⚠️  Please specify a test suite ID or use --all\n'));
+      logger.info(chalk.yellow('\n⚠️  Please specify a test suite ID or use --all\n'));
     }
   } catch (error) {
     spinner.fail('Analysis failed');
-    console.error(chalk.red('\n❌ Error:'), error);
+    logger.error(chalk.red('\n❌ Error:'), error);
     process.exit(1);
   }
 };
 
 const displayQualityReport = () => {
-  console.log(chalk.bold('\n📊 Quality Report\n'));
+  logger.info(chalk.bold('\n📊 Quality Report\n'));
 
   const table = new Table({
     head: [chalk.cyan('Metric'), chalk.cyan('Score'), chalk.cyan('Status')],
@@ -76,8 +79,8 @@ const displayQualityReport = () => {
     [chalk.bold('Overall Score'), chalk.bold('82/100'), chalk.green('✓ Good')]
   );
 
-  console.log(table.toString());
-  console.log();
+  logger.info(table.toString());
+  logger.info();
 };
 
 

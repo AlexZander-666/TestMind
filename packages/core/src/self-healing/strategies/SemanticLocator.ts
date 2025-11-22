@@ -12,6 +12,9 @@
 import type { LLMService } from '../../llm/LLMService';
 import type { ElementDescriptor, LocatorResult } from '../LocatorEngine';
 import type { BrowserContext } from '../adapters/BrowserAdapter';
+import { createComponentLogger } from '../../utils/logger';
+
+const logger = createComponentLogger('SemanticLocator');
 
 export interface SemanticLocatorConfig {
   /** 最小置信度阈值 */
@@ -114,7 +117,7 @@ export class SemanticLocator {
 
       return this.parseSemanticResponse(response.content);
     } catch (error) {
-      console.error('[SemanticLocator] LLM analysis failed:', error);
+      logger.error('[SemanticLocator] LLM analysis failed:', error);
       return null;
     }
   }
@@ -201,7 +204,7 @@ export class SemanticLocator {
         confidence: avgConfidence,
       };
     } catch (error) {
-      console.error('[SemanticLocator] Failed to parse LLM response:', error);
+      logger.error('[SemanticLocator] Failed to parse LLM response:', error);
       return null;
     }
   }
@@ -267,7 +270,7 @@ export class SemanticLocator {
     try {
       return await context.adapter.findElement(selector);
     } catch (error) {
-      console.debug(`[SemanticLocator] Failed to locate with selector: ${selector}`, error);
+      logger.debug(`[SemanticLocator] Failed to locate with selector: ${selector}`, error);
       return null;
     }
   }
@@ -279,7 +282,7 @@ export class SemanticLocator {
     try {
       return await context.adapter.getSimplifiedDOM(5);
     } catch (error) {
-      console.error('[SemanticLocator] Failed to get DOM summary:', error);
+      logger.error('[SemanticLocator] Failed to get DOM summary:', error);
       return 'DOM summary not available';
     }
   }

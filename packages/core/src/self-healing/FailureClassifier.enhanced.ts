@@ -10,6 +10,9 @@
  */
 
 import type { LLMService } from '../llm/LLMService';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('FailureClassifier_enhanced');
 
 export interface TestFailure {
   /** 测试名称 */
@@ -113,7 +116,7 @@ export class EnhancedFailureClassifier {
           return this.mergeResults(ruleResult, llmResult);
         }
       } catch (error) {
-        console.error('[FailureClassifier] LLM classification failed:', error);
+        logger.error('[FailureClassifier] LLM classification failed:', error);
         // 如果 LLM 失败，返回规则结果
       }
     }
@@ -187,7 +190,7 @@ export class EnhancedFailureClassifier {
 
       return this.parseLLMResponse(response.content);
     } catch (error) {
-      console.error('[FailureClassifier] LLM classification error:', error);
+      logger.error('[FailureClassifier] LLM classification error:', error);
       return null;
     }
   }
@@ -240,7 +243,7 @@ Respond in JSON format:
         recommendations: parsed.recommendations || [],
       };
     } catch (error) {
-      console.error('[FailureClassifier] Failed to parse LLM response:', error);
+      logger.error('[FailureClassifier] Failed to parse LLM response:', error);
       return null;
     }
   }
@@ -501,7 +504,7 @@ Respond in JSON format:
         const result = await this.classify(failure);
         results.set(failure.testName, result);
       } catch (error) {
-        console.error(`[FailureClassifier] Failed to classify ${failure.testName}:`, error);
+        logger.error(`[FailureClassifier] Failed to classify ${failure.testName}:`, error);
       }
     }
 

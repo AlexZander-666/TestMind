@@ -3,6 +3,9 @@
  */
 
 import type { TestSuite, CoverageInfo, TestError } from '@testmind/shared';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('TestRunner');
 
 export interface ExecutionResult {
   success: boolean;
@@ -16,7 +19,7 @@ export class TestRunner {
    * Run test suite in isolated environment
    */
   async run(testSuite: TestSuite): Promise<ExecutionResult> {
-    console.log(`[TestRunner] Executing tests: ${testSuite.filePath}`);
+    logger.info(`[TestRunner] Executing tests: ${testSuite.filePath}`);
 
     // TODO: Implement actual test execution
     // 1. Write test code to temporary file
@@ -49,7 +52,7 @@ export class TestRunner {
     results: ExecutionResult[];
     isStable: boolean;
   }> {
-    console.log(`[TestRunner] Running stability check (${iterations} iterations)`);
+    logger.info(`[TestRunner] Running stability check (${iterations} iterations)`);
 
     const results: ExecutionResult[] = [];
     for (let i = 0; i < iterations; i++) {

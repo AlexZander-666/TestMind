@@ -12,6 +12,9 @@
 import type { LLMService } from '../llm/LLMService';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('CoverageAnalyzer');
 
 /**
  * 覆盖率数据（Istanbul 格式）
@@ -138,7 +141,7 @@ export class CoverageAnalyzer {
   async analyzeCoverageGaps(
     coverageReportPath: string
   ): Promise<CoverageAnalysisResult> {
-    console.log('[CoverageAnalyzer] Analyzing coverage gaps...');
+    logger.info('[CoverageAnalyzer] Analyzing coverage gaps...');
 
     // 1. 解析覆盖率报告
     const coverageData = await this.parseCoverageReport(coverageReportPath);
@@ -146,7 +149,7 @@ export class CoverageAnalyzer {
     // 2. 提取未覆盖的函数
     const uncoveredFunctions = await this.extractUncoveredFunctions(coverageData);
 
-    console.log(`[CoverageAnalyzer] Found ${uncoveredFunctions.length} uncovered functions`);
+    logger.info(`[CoverageAnalyzer] Found ${uncoveredFunctions.length} uncovered functions`);
 
     // 3. 按优先级排序
     const prioritized = this.prioritizeFunctions(uncoveredFunctions);
@@ -328,7 +331,7 @@ export class CoverageAnalyzer {
         const suggestion = await this.suggestTestForFunction(fn);
         suggestions.push(suggestion);
       } catch (error) {
-        console.error(`[CoverageAnalyzer] Failed to generate suggestion for ${fn.name}:`, error);
+        logger.error(`[CoverageAnalyzer] Failed to generate suggestion for ${fn.name}:`, error);
         // 回退到基础建议
         suggestions.push(this.generateBasicSuggestion(fn));
       }
@@ -602,7 +605,7 @@ Respond in JSON format:
         const result = await this.analyzeCoverageGaps(reportPath);
         results.set(reportPath, result);
       } catch (error) {
-        console.error(`[CoverageAnalyzer] Failed to analyze ${reportPath}:`, error);
+        logger.error(`[CoverageAnalyzer] Failed to analyze ${reportPath}:`, error);
       }
     }
 

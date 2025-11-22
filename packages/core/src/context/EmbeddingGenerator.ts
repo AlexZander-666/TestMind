@@ -11,6 +11,9 @@
 
 import { OpenAIEmbeddings } from '@langchain/openai';
 import type { CodeChunk } from '@testmind/shared';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('EmbeddingGenerator');
 
 /**
  * Embedding 配置
@@ -110,7 +113,7 @@ export class EmbeddingGenerator {
     chunks: CodeChunk[],
     onProgress?: ProgressCallback
   ): Promise<EmbeddingGenerationResult> {
-    console.log(`[EmbeddingGenerator] Starting batch generation for ${chunks.length} chunks`);
+    logger.info(`[EmbeddingGenerator] Starting batch generation for ${chunks.length} chunks`);
     
     const startTime = Date.now();
     const failures: Array<{ chunkId: string; error: string }> = [];
@@ -165,14 +168,14 @@ export class EmbeddingGenerator {
           });
         }
 
-        console.log(
+        logger.info(
           `[EmbeddingGenerator] Batch ${batchIndex + 1}/${batches.length} completed ` +
           `(${batch.length} chunks, ${estimatedTokens} tokens, ${Date.now() - batchStartTime}ms)`
         );
 
       } catch (error) {
         // 批量失败，记录失败项
-        console.error(`[EmbeddingGenerator] Batch ${batchIndex + 1} failed:`, error);
+        logger.error(`[EmbeddingGenerator] Batch ${batchIndex + 1} failed:`, error);
         
         for (const chunk of batch) {
           failures.push({
@@ -197,11 +200,11 @@ export class EmbeddingGenerator {
       failures,
     };
 
-    console.log('[EmbeddingGenerator] Generation complete:');
-    console.log(`  - Success: ${successCount}/${chunks.length}`);
-    console.log(`  - Tokens: ${totalTokens.toLocaleString()}`);
-    console.log(`  - Cost: $${estimatedCost.toFixed(4)}`);
-    console.log(`  - Duration: ${(duration / 1000).toFixed(2)}s`);
+    logger.info('[EmbeddingGenerator] Generation complete:');
+    logger.info(`  - Success: ${successCount}/${chunks.length}`);
+    logger.info(`  - Tokens: ${totalTokens.toLocaleString()}`);
+    logger.info(`  - Cost: $${estimatedCost.toFixed(4)}`);
+    logger.info(`  - Duration: ${(duration / 1000).toFixed(2)}s`);
 
     return result;
   }
@@ -289,7 +292,7 @@ export class EmbeddingGenerator {
         return embeddings;
       } catch (error) {
         lastError = error as Error;
-        console.warn(
+        logger.warn(
           `[EmbeddingGenerator] Attempt ${attempt + 1}/${this.config.maxRetries} failed:`,
           error
         );
@@ -297,7 +300,7 @@ export class EmbeddingGenerator {
         // 等待后重试
         if (attempt < this.config.maxRetries - 1) {
           const delay = this.config.retryDelay * Math.pow(2, attempt); // 指数退避
-          console.log(`[EmbeddingGenerator] Retrying in ${delay}ms...`);
+          logger.info(`[EmbeddingGenerator] Retrying in ${delay}ms...`);
           await this.sleep(delay);
         }
       }
@@ -331,7 +334,7 @@ export class EmbeddingGenerator {
       return contentChanged;
     });
 
-    console.log(
+    logger.info(
       `[EmbeddingGenerator] Incremental generation: ${chunksToGenerate.length}/${allChunks.length} chunks need updating`
     );
 

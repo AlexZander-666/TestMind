@@ -6,6 +6,9 @@ import type { TestSuite, TestRunResult, QualityScore, Improvement } from '@testm
 import { generateUUID } from '@testmind/shared';
 import { TestRunner } from './TestRunner';
 import { QualityAnalyzer } from './QualityAnalyzer';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('TestEvaluator');
 
 export class TestEvaluator {
   private runner: TestRunner;
@@ -20,7 +23,7 @@ export class TestEvaluator {
    * Run tests and collect metrics
    */
   async runTests(testSuite: TestSuite): Promise<TestRunResult> {
-    console.log(`[TestEvaluator] Running test suite: ${testSuite.id}`);
+    logger.info(`[TestEvaluator] Running test suite: ${testSuite.id}`);
 
     // Execute tests
     const executionResult = await this.runner.run(testSuite);
@@ -39,7 +42,7 @@ export class TestEvaluator {
       errors: executionResult.errors,
     };
 
-    console.log('[TestEvaluator] Test run complete:', {
+    logger.info('[TestEvaluator] Test run complete:', {
       status: result.status,
       coverage: result.coverage.percentage,
       qualityScore: result.qualityScore.overallScore,
@@ -52,7 +55,7 @@ export class TestEvaluator {
    * Evaluate test quality without running
    */
   async evaluateQuality(testSuite: TestSuite): Promise<QualityScore> {
-    console.log(`[TestEvaluator] Evaluating quality: ${testSuite.id}`);
+    logger.info(`[TestEvaluator] Evaluating quality: ${testSuite.id}`);
     return this.analyzer.analyze(testSuite);
   }
 
@@ -60,7 +63,7 @@ export class TestEvaluator {
    * Generate improvement suggestions
    */
   async suggestImprovements(evaluation: QualityScore, suiteId: string): Promise<Improvement[]> {
-    console.log(`[TestEvaluator] Generating improvements for: ${suiteId}`);
+    logger.info(`[TestEvaluator] Generating improvements for: ${suiteId}`);
 
     const improvements: Improvement[] = [];
 

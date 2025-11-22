@@ -24,6 +24,9 @@
 
 import type { ProjectConfig, CodeChunk, SemanticSearchResult, CodeFile } from '@testmind/shared';
 import { OpenAI } from '@langchain/openai';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('SemanticIndexer');
 
 export interface EmbeddingResult {
   embeddingsCount: number;
@@ -58,7 +61,7 @@ export class SemanticIndexer {
    * Economic note: Embeddings are created once, used many times
    */
   async indexCodebase(files: CodeFile[]): Promise<EmbeddingResult> {
-    console.log(`[SemanticIndexer] Indexing ${files.length} files`);
+    logger.info(`[SemanticIndexer] Indexing ${files.length} files`);
     
     const startTime = Date.now();
     let embeddingsCount = 0;
@@ -66,13 +69,13 @@ export class SemanticIndexer {
 
     // Skip if no API key (graceful degradation)
     if (!this.embeddings) {
-      console.log('[SemanticIndexer] No API key - semantic search disabled');
+      logger.info('[SemanticIndexer] No API key - semantic search disabled');
       return { embeddingsCount: 0, duration: 0, cost: 0 };
     }
 
     // Step 1: Create code chunks
     const chunks = this.createCodeChunks(files);
-    console.log(`[SemanticIndexer] Created ${chunks.length} code chunks`);
+    logger.info(`[SemanticIndexer] Created ${chunks.length} code chunks`);
 
     // Step 2: Generate embeddings (batch processing)
     // For MVP, we'll generate embeddings on-demand to save cost
@@ -88,7 +91,7 @@ export class SemanticIndexer {
     }
 
     const duration = Date.now() - startTime;
-    console.log(`[SemanticIndexer] Indexing complete in ${duration}ms`);
+    logger.info(`[SemanticIndexer] Indexing complete in ${duration}ms`);
     
     return {
       embeddingsCount: chunks.length,
@@ -166,7 +169,7 @@ export class SemanticIndexer {
     const k = options?.topK || 5;
     const minScore = options?.minScore || 0;
 
-    console.log(`[SemanticIndexer] Searching: "${query}" (k=${k}, minScore=${minScore})`);
+    logger.info(`[SemanticIndexer] Searching: "${query}" (k=${k}, minScore=${minScore})`);
 
     const results: SemanticSearchResult[] = [];
     const queryTokens = this.tokenize(query);
@@ -239,7 +242,7 @@ export class SemanticIndexer {
       });
     }
 
-    console.log(`[SemanticIndexer] Found ${results.length} results`, {
+    logger.info(`[SemanticIndexer] Found ${results.length} results`, {
       topScore: results[0]?.score,
       avgScore: results.length > 0 
         ? (results.reduce((sum, r) => sum + r.score, 0) / results.length).toFixed(1)
@@ -384,7 +387,7 @@ export class SemanticIndexer {
    * Update embeddings for a single file
    */
   async updateFile(filePath: string): Promise<void> {
-    console.log(`[SemanticIndexer] Updating embeddings: ${filePath}`);
+    logger.info(`[SemanticIndexer] Updating embeddings: ${filePath}`);
     
     // Remove old chunks for this file
     this.codeChunks = this.codeChunks.filter((c) => c.filePath !== filePath);

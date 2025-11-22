@@ -10,6 +10,9 @@
 
 import { Skill } from './Skill';
 import type { LLMService } from '../llm/LLMService';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('WebdriverIOSkill');
 
 export interface WebdriverIOContext {
   /** 测试名称 */
@@ -59,7 +62,7 @@ export class WebdriverIOSkill {
    * 执行技能
    */
   async execute(context: WebdriverIOContext): Promise<{ code: string }> {
-    console.log(`[WebdriverIOSkill] Generating ${context.testType} test: ${context.testName}`);
+    logger.info(`[WebdriverIOSkill] Generating ${context.testType} test: ${context.testName}`);
 
     const prompt = this.buildPrompt(context);
 

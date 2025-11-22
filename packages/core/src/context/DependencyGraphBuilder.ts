@@ -13,6 +13,9 @@
 import type { ProjectConfig, CodeFile, Dependency } from '@testmind/shared';
 import { normalizePath } from '@testmind/shared';
 import path from 'path';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('DependencyGraphBuilder');
 
 export class DependencyGraphBuilder {
   // Module-level dependency graph
@@ -41,7 +44,7 @@ export class DependencyGraphBuilder {
    * repeated cost of runtime dependency resolution
    */
   async buildGraph(files: CodeFile[]): Promise<void> {
-    console.log(`[DependencyGraphBuilder] Building graph for ${files.length} files`);
+    logger.info(`[DependencyGraphBuilder] Building graph for ${files.length} files`);
     
     const startTime = Date.now();
     
@@ -61,8 +64,8 @@ export class DependencyGraphBuilder {
     }
 
     const duration = Date.now() - startTime;
-    console.log(`[DependencyGraphBuilder] Graph built in ${duration}ms`);
-    console.log(`[DependencyGraphBuilder] Nodes: ${this.dependencyGraph.size}, Edges: ${this.countEdges()}`);
+    logger.info(`[DependencyGraphBuilder] Graph built in ${duration}ms`);
+    logger.info(`[DependencyGraphBuilder] Nodes: ${this.dependencyGraph.size}, Edges: ${this.countEdges()}`);
   }
 
   /**
@@ -183,7 +186,7 @@ export class DependencyGraphBuilder {
    * Returns both internal and external dependencies
    */
   async getFunctionDependencies(filePath: string, functionName: string): Promise<Dependency[]> {
-    console.log(`[DependencyGraphBuilder] Getting dependencies: ${functionName}`);
+    logger.info(`[DependencyGraphBuilder] Getting dependencies: ${functionName}`);
     
     const normalized = normalizePath(filePath);
     const dependencies: Dependency[] = [];
@@ -214,7 +217,7 @@ export class DependencyGraphBuilder {
    * Critical for understanding impact of changes
    */
   async getFunctionCallers(filePath: string, functionName: string): Promise<string[]> {
-    console.log(`[DependencyGraphBuilder] Getting callers: ${functionName}`);
+    logger.info(`[DependencyGraphBuilder] Getting callers: ${functionName}`);
     
     const normalized = normalizePath(filePath);
     const callers: string[] = [];
@@ -245,7 +248,7 @@ export class DependencyGraphBuilder {
    * Performance optimization: Only rebuild affected subgraph
    */
   async updateFile(filePath: string): Promise<void> {
-    console.log(`[DependencyGraphBuilder] Updating graph: ${filePath}`);
+    logger.info(`[DependencyGraphBuilder] Updating graph: ${filePath}`);
     
     const normalized = normalizePath(filePath);
 

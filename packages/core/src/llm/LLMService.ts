@@ -10,6 +10,8 @@ import { createComponentLogger } from '../utils/logger';
 import { metrics, MetricNames } from '../utils/metrics';
 import { llmCache } from './LLMCache';
 
+const logger = createComponentLogger('LLMService');
+
 export interface LLMProvider {
   generate(request: Omit<LLMRequest, 'provider'>): Promise<LLMResponse>;
 }
@@ -133,7 +135,7 @@ export class LLMService {
    * Generate embeddings for semantic search
    */
   async generateEmbedding(text: string, provider: LLMProviderType = 'openai'): Promise<number[]> {
-    console.log(`[LLMService] Generating embedding with ${provider}`);
+    logger.info(`[LLMService] Generating embedding with ${provider}`);
 
     const llmProvider = this.providers.get(provider);
     if (!llmProvider) {

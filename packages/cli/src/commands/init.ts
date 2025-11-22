@@ -8,17 +8,20 @@ import ora from 'ora';
 import { DEFAULT_CONFIG, type ProjectSettings } from '@testmind/shared';
 import { ensureDir, safeWriteFile } from '../utils/file';
 import path from 'path';
+import { createComponentLogger } from '../../../core/src/utils/logger';
+
+const logger = createComponentLogger('init');
 
 export const initCommand = async (options: { force?: boolean }) => {
-  console.log(chalk.bold.cyan('\n🧠 TestMind Initialization\n'));
+  logger.info(chalk.bold.cyan('\n🧠 TestMind Initialization\n'));
 
   // Check if already initialized
   const configPath = path.join(process.cwd(), '.testmind', 'config.json');
   const configExists = await checkFileExists(configPath);
 
   if (configExists && !options.force) {
-    console.log(chalk.yellow('⚠️  TestMind is already initialized in this project.'));
-    console.log(chalk.gray('   Use --force to reinitialize.\n'));
+    logger.info(chalk.yellow('⚠️  TestMind is already initialized in this project.'));
+    logger.info(chalk.gray('   Use --force to reinitialize.\n'));
     return;
   }
 
@@ -104,14 +107,14 @@ export const initCommand = async (options: { force?: boolean }) => {
 
     spinner.succeed('Configuration created successfully!');
 
-    console.log(chalk.green('\n✅ TestMind initialized successfully!\n'));
-    console.log(chalk.gray('Next steps:'));
-    console.log(chalk.gray('  1. Set your API key: export OPENAI_API_KEY=your-key'));
-    console.log(chalk.gray('  2. Generate tests: testmind generate <path>'));
-    console.log(chalk.gray('  3. Run tests: testmind run\n'));
+    logger.info(chalk.green('\n✅ TestMind initialized successfully!\n'));
+    logger.info(chalk.gray('Next steps:'));
+    logger.info(chalk.gray('  1. Set your API key: export OPENAI_API_KEY=your-key'));
+    logger.info(chalk.gray('  2. Generate tests: testmind generate <path>'));
+    logger.info(chalk.gray('  3. Run tests: testmind run\n'));
   } catch (error) {
     spinner.fail('Failed to initialize');
-    console.error(chalk.red('\n❌ Error:'), error);
+    logger.error(chalk.red('\n❌ Error:'), error);
     process.exit(1);
   }
 };
@@ -143,7 +146,7 @@ const appendToGitignore = async (): Promise<void> => {
       await fs.writeFile(gitignorePath, entry);
     }
   } catch (error) {
-    console.warn(chalk.yellow('Warning: Could not update .gitignore'));
+    logger.warn(chalk.yellow('Warning: Could not update .gitignore'));
   }
 };
 

@@ -11,6 +11,9 @@
 
 import type { CodeChunk } from '@testmind/shared';
 import type { HybridSearchEngine } from '../context/HybridSearchEngine';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('CostOptimizer');
 
 /**
  * 模型定价（$/1M tokens）
@@ -223,14 +226,14 @@ export class CostOptimizer {
       // 搜索相似代码
       const results = await this.hybridSearch.search(query);
 
-      console.log(
+      logger.info(
         `[CostOptimizer] Selected ${results.length} few-shot examples ` +
         `(avg score: ${(results.reduce((sum, r) => sum + r.score, 0) / results.length).toFixed(3)})`
       );
 
       return results.map(r => r.chunk);
     } catch (error) {
-      console.error('[CostOptimizer] Failed to select few-shot examples:', error);
+      logger.error('[CostOptimizer] Failed to select few-shot examples:', error);
       return [];
     }
   }
@@ -289,7 +292,7 @@ TEST 2:
     const tokensSaved = individualCost - batchCost;
     const estimatedSavings = (tokensSaved / 1_000_000) * 0.5;
 
-    console.log(`[CostOptimizer] Batch generation saves ~${tokensSaved} tokens ($${estimatedSavings.toFixed(4)})`);
+    logger.info(`[CostOptimizer] Batch generation saves ~${tokensSaved} tokens ($${estimatedSavings.toFixed(4)})`);
 
     return {
       prompts: [batchPrompt],
@@ -385,7 +388,7 @@ export class CostTracker {
     const pricing = MODEL_PRICING[entry.model as keyof typeof MODEL_PRICING];
     
     if (!pricing) {
-      console.warn(`[CostTracker] Unknown model pricing: ${entry.model}`);
+      logger.warn(`[CostTracker] Unknown model pricing: ${entry.model}`);
       return;
     }
 

@@ -18,6 +18,9 @@
 import type { CodeChunk, SemanticSearchResult } from '@testmind/shared';
 import type { EnhancedVectorStore } from '../db/VectorStore.enhanced';
 import type { DependencyGraphBuilder } from './DependencyGraphBuilder';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('HybridSearchEngine');
 
 /**
  * 搜索查询
@@ -142,10 +145,10 @@ export class HybridSearchEngine {
       this.dependencySearch(query, topK * 4),
     ]);
 
-    console.log('[HybridSearch] Search results:');
-    console.log(`  - Vector: ${vectorResults.length}`);
-    console.log(`  - Keyword: ${keywordResults.length}`);
-    console.log(`  - Dependency: ${dependencyResults.length}`);
+    logger.info('[HybridSearch] Search results:');
+    logger.info(`  - Vector: ${vectorResults.length}`);
+    logger.info(`  - Keyword: ${keywordResults.length}`);
+    logger.info(`  - Dependency: ${dependencyResults.length}`);
 
     // 使用 RRF 融合结果
     const merged = this.reciprocalRankFusion([
@@ -167,7 +170,7 @@ export class HybridSearchEngine {
     const duration = Date.now() - startTime;
     this.updateStats(duration);
 
-    console.log(`[HybridSearch] Returned ${results.length} results in ${duration}ms`);
+    logger.info(`[HybridSearch] Returned ${results.length} results in ${duration}ms`);
 
     return results;
   }
@@ -187,7 +190,7 @@ export class HybridSearchEngine {
       this.stats.strategyHits.vector++;
       return await this.vectorStore.search(query.embedding, { k });
     } catch (error) {
-      console.error('[HybridSearch] Vector search failed:', error);
+      logger.error('[HybridSearch] Vector search failed:', error);
       return [];
     }
   }
@@ -268,7 +271,7 @@ export class HybridSearchEngine {
 
       return results.slice(0, k);
     } catch (error) {
-      console.error('[HybridSearch] Dependency search failed:', error);
+      logger.error('[HybridSearch] Dependency search failed:', error);
       return [];
     }
   }
@@ -437,7 +440,7 @@ export class HybridSearchEngine {
    * 构建关键词索引
    */
   async buildKeywordIndex(chunks: CodeChunk[]): Promise<void> {
-    console.log(`[HybridSearch] Building keyword index for ${chunks.length} chunks`);
+    logger.info(`[HybridSearch] Building keyword index for ${chunks.length} chunks`);
     
     this.keywordIndex.clear();
     this.chunkCache.clear();
@@ -459,7 +462,7 @@ export class HybridSearchEngine {
       }
     }
 
-    console.log(`[HybridSearch] Keyword index built: ${this.keywordIndex.size} unique keywords`);
+    logger.info(`[HybridSearch] Keyword index built: ${this.keywordIndex.size} unique keywords`);
   }
 
   /**
@@ -497,7 +500,7 @@ export class HybridSearchEngine {
       }
     }
 
-    console.log(`[HybridSearch] Updated index for: ${filePath}`);
+    logger.info(`[HybridSearch] Updated index for: ${filePath}`);
   }
 
   /**

@@ -5,7 +5,6 @@
 
 import type {
   FunctionContext,
-  CodeChunk,
   SemanticSearchResult,
   ProjectConfig,
   CodeFile,
@@ -42,7 +41,7 @@ export class ContextEngine {
   private logger = createComponentLogger('ContextEngine');
   private lastIndexedFiles: CodeFile[] = [];
 
-  constructor(private config: ProjectConfig) {
+  constructor(config: ProjectConfig) {
     // Create shared FileCache instance for all components
     this.fileCache = new FileCache();
     
@@ -58,15 +57,11 @@ export class ContextEngine {
    * This is the entry point for understanding a codebase
    * 
    * @param projectPath - Root path of the project
-   * @param options - Indexing options
    */
-  async indexProject(projectPath: string, options?: { 
-    force?: boolean;
-    incremental?: boolean;
-  }): Promise<IndexResult> {
+  async indexProject(projectPath: string): Promise<IndexResult> {
     const startTime = Date.now();
     
-    this.logger.info('Starting project indexing', { projectPath, options });
+    this.logger.info('Starting project indexing', { projectPath });
 
     // Initialize incremental indexer
     if (!this.incrementalIndexer) {
@@ -74,7 +69,7 @@ export class ContextEngine {
     }
 
     // Detect if incremental update is possible
-    const shouldUseIncremental = options?.incremental !== false && !options?.force;
+    const shouldUseIncremental = true;
     
     if (shouldUseIncremental) {
       const changeResult = await this.incrementalIndexer.detectChanges();

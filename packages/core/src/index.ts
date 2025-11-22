@@ -43,13 +43,53 @@ export * from './diff';
 export * from './ci-cd';
 
 // Skills Framework
-export * from './skills';
+export { 
+  BaseSkill,
+  Skill,
+  SkillCategory,
+  SkillResult,
+  CodeChange,
+  SkillConfiguration
+} from './skills/Skill';
+export { SkillRegistry } from './skills/SkillRegistry';
+export { SkillOrchestrator } from './skills/SkillOrchestrator';
+export { TestGenerationSkill } from './skills/TestGenerationSkill';
+export { RefactorSkill } from './skills/RefactorSkill';
 
 // v0.6.0 features (disabled due to type conflicts)
 // export * from './v0.6.0';
 
 // Utilities
-export * from './utils';
+export { 
+  GitAutomation,
+  FileCache,
+  logger,
+  Logger,
+  createComponentLogger,
+  LogLevel,
+  flushLogs,
+  metrics,
+  Metrics,
+  timeOperation,
+  MetricNames,
+  initializeErrorTracking,
+  captureError,
+  captureMessage,
+  setUserContext,
+  clearUserContext,
+  addBreadcrumb,
+  startTransaction,
+  withErrorTracking,
+  ErrorTracker,
+  createErrorTracker,
+  flushErrorTracking,
+  safeParseFile,
+  ensureDir,
+  safeWriteFile
+} from './utils';
+
+// Errors
+export * from './errors';
 
 
 

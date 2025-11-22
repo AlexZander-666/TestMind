@@ -4,6 +4,9 @@
 
 import type { LLMRequest, LLMResponse } from '@testmind/shared';
 import type { LLMProvider } from '../LLMService';
+import { createComponentLogger } from '../../utils/logger';
+
+const logger = createComponentLogger('AnthropicProvider');
 
 export class AnthropicProvider implements LLMProvider {
   private apiKey: string | undefined;
@@ -18,7 +21,7 @@ export class AnthropicProvider implements LLMProvider {
       throw new Error('ANTHROPIC_API_KEY environment variable is not set');
     }
 
-    console.log('[AnthropicProvider] Calling Anthropic API...');
+    logger.info('[AnthropicProvider] Calling Anthropic API...');
 
     // TODO: Implement actual API call using @langchain/anthropic
     

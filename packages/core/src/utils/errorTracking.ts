@@ -11,6 +11,9 @@
  */
 
 import * as Sentry from '@sentry/node';
+import { createComponentLogger } from './logger';
+
+const logger = createComponentLogger('errorTracking');
 
 export interface ErrorContext {
   component?: string;
@@ -30,7 +33,7 @@ export function initializeErrorTracking(): void {
   
   // Only initialize if DSN is provided
   if (!sentryDsn) {
-    console.log('[ErrorTracking] Sentry DSN not provided, error tracking disabled');
+    logger.info('[ErrorTracking] Sentry DSN not provided, error tracking disabled');
     return;
   }
 
@@ -71,7 +74,7 @@ export function initializeErrorTracking(): void {
     },
   });
 
-  console.log(`[ErrorTracking] Sentry initialized (env: ${sentryEnv})`);
+  logger.info(`[ErrorTracking] Sentry initialized (env: ${sentryEnv})`);
 }
 
 /**
@@ -111,7 +114,7 @@ export function captureError(error: Error, context?: ErrorContext): string {
     });
   } catch {
     // Sentry not initialized, log to console
-    console.error('[ErrorTracking] Error captured (Sentry not initialized):', error);
+    logger.error('[ErrorTracking] Error captured (Sentry not initialized):', error);
     return '';
   }
 }
@@ -133,7 +136,7 @@ export function captureMessage(
       },
     });
   } catch {
-    console.log(`[ErrorTracking] Message captured (Sentry not initialized): ${message}`);
+    logger.info(`[ErrorTracking] Message captured (Sentry not initialized): ${message}`);
     return '';
   }
 }

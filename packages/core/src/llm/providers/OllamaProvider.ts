@@ -4,6 +4,9 @@
 
 import type { LLMRequest, LLMResponse } from '@testmind/shared';
 import type { LLMProvider } from '../LLMService';
+import { createComponentLogger } from '../../utils/logger';
+
+const logger = createComponentLogger('OllamaProvider');
 
 export class OllamaProvider implements LLMProvider {
   private baseURL: string;
@@ -13,7 +16,7 @@ export class OllamaProvider implements LLMProvider {
   }
 
   async generate(request: Omit<LLMRequest, 'provider'>): Promise<LLMResponse> {
-    console.log('[OllamaProvider] Calling local Ollama...');
+    logger.info('[OllamaProvider] Calling local Ollama...');
 
     // TODO: Implement actual API call to Ollama
     

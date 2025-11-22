@@ -15,6 +15,9 @@ import * as crypto from 'crypto';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { metrics, MetricNames } from '../utils/metrics';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('LLMCache');
 
 export interface CacheEntry {
   prompt: string;
@@ -90,7 +93,7 @@ export class LLMCache {
     // 如果启用持久化，尝试加载
     if (this.config.enablePersistence) {
       this.loadFromDisk().catch(err => {
-        console.warn('Failed to load cache from disk:', err);
+        logger.warn('Failed to load cache from disk:', err);
       });
     }
   }
@@ -215,7 +218,7 @@ export class LLMCache {
     // 异步持久化（不阻塞）
     if (this.config.enablePersistence) {
       this.saveToDisk().catch(err => {
-        console.warn('Failed to persist cache:', err);
+        logger.warn('Failed to persist cache:', err);
       });
     }
   }
@@ -344,7 +347,7 @@ export class LLMCache {
     this.cache.clear();
     this.accessOrder = [];
     
-    console.log(`[LLMCache] Cleared ${size} entries`);
+    logger.info(`[LLMCache] Cleared ${size} entries`);
   }
 
   /**
@@ -363,7 +366,7 @@ export class LLMCache {
     }
 
     if (cleared > 0) {
-      console.log(`[LLMCache] Cleared ${cleared} expired entries`);
+      logger.info(`[LLMCache] Cleared ${cleared} expired entries`);
     }
 
     return cleared;
@@ -423,7 +426,7 @@ export class LLMCache {
         'utf-8'
       );
     } catch (error) {
-      console.error('[LLMCache] Failed to save to disk:', error);
+      logger.error('[LLMCache] Failed to save to disk:', error);
     }
   }
 
@@ -444,10 +447,10 @@ export class LLMCache {
       this.hits = data.stats?.hits || 0;
       this.misses = data.stats?.misses || 0;
 
-      console.log(`[LLMCache] Loaded ${this.cache.size} entries from disk`);
+      logger.info(`[LLMCache] Loaded ${this.cache.size} entries from disk`);
     } catch (error) {
       // 文件不存在或解析失败，使用空缓存
-      console.log('[LLMCache] Starting with empty cache');
+      logger.info('[LLMCache] Starting with empty cache');
     }
   }
 
@@ -474,7 +477,7 @@ export class LLMCache {
       
       return this.cache.size;
     } catch (error) {
-      console.error('[LLMCache] Failed to import data:', error);
+      logger.error('[LLMCache] Failed to import data:', error);
       return 0;
     }
   }

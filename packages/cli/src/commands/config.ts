@@ -4,18 +4,21 @@
 
 import chalk from 'chalk';
 import { loadConfig } from '../utils/config';
+import { createComponentLogger } from '../../../core/src/utils/logger';
+
+const logger = createComponentLogger('config');
 
 export const configCommand = async (
   action: string = 'show',
   key?: string,
   value?: string
 ) => {
-  console.log(chalk.bold.cyan('\n🧠 TestMind - Configuration\n'));
+  logger.info(chalk.bold.cyan('\n🧠 TestMind - Configuration\n'));
 
   const config = await loadConfig();
 
   if (!config) {
-    console.log(chalk.red('❌ TestMind is not initialized in this project.\n'));
+    logger.info(chalk.red('❌ TestMind is not initialized in this project.\n'));
     process.exit(1);
   }
 
@@ -26,36 +29,36 @@ export const configCommand = async (
     
     case 'set':
       if (!key || !value) {
-        console.log(chalk.red('❌ Key and value required for set action\n'));
+        logger.info(chalk.red('❌ Key and value required for set action\n'));
         process.exit(1);
       }
-      console.log(chalk.yellow('⚠️  Config set not yet implemented\n'));
+      logger.info(chalk.yellow('⚠️  Config set not yet implemented\n'));
       break;
     
     case 'reset':
-      console.log(chalk.yellow('⚠️  Config reset not yet implemented\n'));
+      logger.info(chalk.yellow('⚠️  Config reset not yet implemented\n'));
       break;
     
     default:
-      console.log(chalk.red(`❌ Unknown action: ${action}\n`));
-      console.log(chalk.gray('   Available actions: show, set, reset\n'));
+      logger.info(chalk.red(`❌ Unknown action: ${action}\n`));
+      logger.info(chalk.gray('   Available actions: show, set, reset\n'));
       break;
   }
 };
 
 const displayConfig = (config: any) => {
-  console.log(chalk.bold('Project Configuration:'));
-  console.log(chalk.gray('─'.repeat(60)));
-  console.log(`${chalk.cyan('ID:')} ${config.id}`);
-  console.log(`${chalk.cyan('Name:')} ${config.name}`);
-  console.log(`${chalk.cyan('Language:')} ${config.language}`);
-  console.log(`${chalk.cyan('Test Framework:')} ${config.testFramework}`);
-  console.log(`${chalk.cyan('Test Directory:')} ${config.config.testDirectory}`);
-  console.log(`${chalk.cyan('Coverage Threshold:')} ${config.config.coverageThreshold}%`);
-  console.log(`${chalk.cyan('LLM Provider:')} ${config.config.llmProvider}`);
-  console.log(`${chalk.cyan('LLM Model:')} ${config.config.llmModel}`);
-  console.log(chalk.gray('─'.repeat(60)));
-  console.log();
+  logger.info(chalk.bold('Project Configuration:'));
+  logger.info(chalk.gray('─'.repeat(60)));
+  logger.info(`${chalk.cyan('ID:')} ${config.id}`);
+  logger.info(`${chalk.cyan('Name:')} ${config.name}`);
+  logger.info(`${chalk.cyan('Language:')} ${config.language}`);
+  logger.info(`${chalk.cyan('Test Framework:')} ${config.testFramework}`);
+  logger.info(`${chalk.cyan('Test Directory:')} ${config.config.testDirectory}`);
+  logger.info(`${chalk.cyan('Coverage Threshold:')} ${config.config.coverageThreshold}%`);
+  logger.info(`${chalk.cyan('LLM Provider:')} ${config.config.llmProvider}`);
+  logger.info(`${chalk.cyan('LLM Model:')} ${config.config.llmModel}`);
+  logger.info(chalk.gray('─'.repeat(60)));
+  logger.info();
 };
 
 

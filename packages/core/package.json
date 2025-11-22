@@ -29,6 +29,7 @@
     "@sentry/node": "^10.20.0",
     "@testmind/shared": "workspace:*",
     "@types/fs-extra": "^11.0.4",
+    "better-sqlite3": "^9.2.0",
     "fast-glob": "^3.3.2",
     "fs-extra": "^11.3.2",
     "glob": "^10.3.10",

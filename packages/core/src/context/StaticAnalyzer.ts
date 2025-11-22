@@ -19,8 +19,7 @@ import type {
   Parameter,
   Property,
 } from '@testmind/shared';
-import { generateUUID, hashString } from '@testmind/shared';
-import { promises as fs } from 'fs';
+import { generateUUID } from '@testmind/shared';
 import fg from 'fast-glob';
 import path from 'path';
 import { FileCache } from '../utils/FileCache';
@@ -99,10 +98,9 @@ export class StaticAnalyzer {
     let totalFunctions = 0;
     let totalClasses = 0;
 
-    let processedCount = 0;
     const results = await this.parallelProcessor.map(
       files,
-      async (file, index) => {
+      async (file) => {
         try {
           const absolutePath = path.join(projectPath, file);
           return await this.analyzeFile(absolutePath);
@@ -167,7 +165,7 @@ export class StaticAnalyzer {
    * Analyze a single file
    */
   async analyzeFile(filePath: string): Promise<CodeFile> {
-    console.log(`[StaticAnalyzer] Analyzing file: ${filePath}`);
+    this.logger.info(`Analyzing file: ${filePath}`);
 
     // Read file content with hash (using FileCache for DRY and performance)
     const { content, hash: fileHash } = await this.fileCache.readFileWithHash(filePath);
@@ -280,7 +278,7 @@ export class StaticAnalyzer {
         isExported,
       };
     } catch (error) {
-      console.warn(`[StaticAnalyzer] Failed to parse function:`, error);
+      this.logger.warn(`Failed to parse function:`, error);
       return null;
     }
   }
@@ -396,7 +394,7 @@ export class StaticAnalyzer {
         implements: [], // TODO: Extract implements
       };
     } catch (error) {
-      console.warn(`[StaticAnalyzer] Failed to parse class:`, error);
+      this.logger.warn(`[StaticAnalyzer] Failed to parse class:`, error);
       return null;
     }
   }
@@ -563,7 +561,7 @@ export class StaticAnalyzer {
         }
       }
     } catch (error) {
-      console.warn(`[StaticAnalyzer] Failed to parse export:`, error);
+      this.logger.warn(`[StaticAnalyzer] Failed to parse export:`, error);
     }
 
     return exports;
@@ -582,7 +580,7 @@ export class StaticAnalyzer {
    * Fixed: Only analyze function body, exclude comments
    */
   async analyzeSideEffects(filePath: string, functionName: string): Promise<SideEffect[]> {
-    console.log(`[StaticAnalyzer] Analyzing side effects: ${functionName}`);
+    this.logger.info(`Analyzing side effects: ${functionName}`);
 
     const sideEffects: SideEffect[] = [];
     const content = await this.fileCache.readFile(filePath);
@@ -590,7 +588,7 @@ export class StaticAnalyzer {
     // Fix 1: Only analyze target function body, not entire file
     const func = await this.getFunction(filePath, functionName);
     if (!func) {
-      console.log(`[StaticAnalyzer] Function ${functionName} not found, skipping side effect analysis`);
+      this.logger.info(`Function ${functionName} not found, skipping side effect analysis`);
       return [];
     }
 
@@ -632,7 +630,7 @@ export class StaticAnalyzer {
       }
     }
 
-    console.log(`[StaticAnalyzer] Found ${sideEffects.length} side effects in ${functionName}`);
+    this.logger.info(`Found ${sideEffects.length} side effects in ${functionName}`);
     return sideEffects;
   }
 
@@ -640,7 +638,7 @@ export class StaticAnalyzer {
    * Find existing tests for a function
    */
   async findExistingTests(_filePath: string, functionName: string): Promise<TestCase[]> {
-    console.log(`[StaticAnalyzer] Finding tests for: ${functionName}`);
+    this.logger.info(`Finding tests for: ${functionName}`);
 
     // TODO: Implement test discovery
     // Look for test files matching the pattern
@@ -657,7 +655,7 @@ export class StaticAnalyzer {
    * Calculate complexity metrics
    */
   async calculateComplexity(filePath: string, functionName: string): Promise<ComplexityMetrics> {
-    console.log(`[StaticAnalyzer] Calculating complexity: ${functionName}`);
+    this.logger.info(`Calculating complexity: ${functionName}`);
 
     const func = await this.getFunction(filePath, functionName);
     if (!func) {
@@ -762,12 +760,13 @@ export class StaticAnalyzer {
 
   /**
    * Helper: Get line and column from character index
+   * @internal - May be used for future debugging features
    */
-  private getLineColumn(text: string, index: number): { line: number; column: number } {
+  private _getLineColumn(text: string, index: number): { line: number; column: number } {
     const lines = text.substring(0, index).split('\n');
     return {
       line: lines.length,
-      column: lines[lines.length - 1]?.length ?? 0,
+      column: lines[lines.length - 1].length + 1,
     };
   }
 }

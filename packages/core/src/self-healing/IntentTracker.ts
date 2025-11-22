@@ -8,6 +8,9 @@
  */
 
 import type { LLMService } from '../llm/LLMService';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('IntentTracker');
 
 export interface TestIntent {
   /** 唯一标识符 */
@@ -413,7 +416,7 @@ Output only the description, no explanations.
 
       return response.content.trim() || this.generateRuleBasedDescription(actionType, features);
     } catch (error) {
-      console.error('Failed to generate intent description:', error);
+      logger.error('Failed to generate intent description:', error);
       return this.generateRuleBasedDescription(actionType, features);
     }
   }
@@ -609,7 +612,7 @@ Output only the description, no explanations.
       
       return imported;
     } catch (error) {
-      console.error('Failed to import intents:', error);
+      logger.error('Failed to import intents:', error);
       return 0;
     }
   }

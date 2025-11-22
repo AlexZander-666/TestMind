@@ -8,6 +8,9 @@ import ora from 'ora';
 import { ContextEngine, TestGenerator, LLMService, TestReviewer, GitAutomation } from '@testmind/core';
 import { loadConfig } from '../utils/config';
 import path from 'path';
+import { createComponentLogger } from '../../../core/src/utils/logger';
+
+const logger = createComponentLogger('generate');
 
 export interface GenerateOptions {
   type?: 'unit' | 'integration' | 'e2e';
@@ -16,14 +19,14 @@ export interface GenerateOptions {
 }
 
 export const generateCommand = async (targetPath: string | undefined, options: GenerateOptions) => {
-  console.log(chalk.bold.cyan('\n🧠 TestMind - AI-Powered Test Generation\n'));
+  logger.info(chalk.bold.cyan('\n🧠 TestMind - AI-Powered Test Generation\n'));
 
   // Check API key first
   if (!process.env.OPENAI_API_KEY) {
-    console.log(chalk.red('❌ OPENAI_API_KEY environment variable not set\n'));
-    console.log(chalk.gray('Please set your OpenAI API key:'));
-    console.log(chalk.cyan('  export OPENAI_API_KEY=sk-your-key-here\n'));
-    console.log(chalk.gray('Get your key at: https://platform.openai.com/api-keys\n'));
+    logger.info(chalk.red('❌ OPENAI_API_KEY environment variable not set\n'));
+    logger.info(chalk.gray('Please set your OpenAI API key:'));
+    logger.info(chalk.cyan('  export OPENAI_API_KEY=sk-your-key-here\n'));
+    logger.info(chalk.gray('Get your key at: https://platform.openai.com/api-keys\n'));
     process.exit(1);
   }
 
@@ -32,8 +35,8 @@ export const generateCommand = async (targetPath: string | undefined, options: G
   
   if (!config) {
     spinner.fail('Not initialized');
-    console.log(chalk.red('\n❌ TestMind is not initialized in this project.'));
-    console.log(chalk.gray('   Run: testmind init\n'));
+    logger.info(chalk.red('\n❌ TestMind is not initialized in this project.'));
+    logger.info(chalk.gray('   Run: testmind init\n'));
     process.exit(1);
   }
 
@@ -50,9 +53,9 @@ export const generateCommand = async (targetPath: string | undefined, options: G
     const absolutePath = path.resolve(process.cwd(), target);
 
     const relPath = path.relative(process.cwd(), absolutePath);
-    console.log(chalk.gray('\n📂 Target: ' + relPath));
-    console.log(chalk.gray('🎯 Type: ' + (options.type || 'unit')));
-    console.log(chalk.gray('🔧 Framework: ' + config.testFramework + '\n'));
+    logger.info(chalk.gray('\n📂 Target: ' + relPath));
+    logger.info(chalk.gray('🎯 Type: ' + (options.type || 'unit')));
+    logger.info(chalk.gray('🔧 Framework: ' + config.testFramework + '\n'));
 
     spinner.start('Indexing project...');
     const indexResult = await contextEngine.indexProject(config.repoPath);
@@ -64,25 +67,25 @@ export const generateCommand = async (targetPath: string | undefined, options: G
     } else if (options.type === 'integration') {
       await generateIntegrationTest(contextEngine, testGenerator, absolutePath, config);
     } else if (options.type === 'e2e') {
-      console.log(chalk.yellow('\n⚠️  E2E test generation is coming in Month 3-4.\n'));
+      logger.info(chalk.yellow('\n⚠️  E2E test generation is coming in Month 3-4.\n'));
     }
 
     await contextEngine.dispose();
 
-    console.log(chalk.green('\n✨ Test generation complete!\n'));
-    console.log(chalk.gray('💡 Tip: Review the test and run it with:'));
+    logger.info(chalk.green('\n✨ Test generation complete!\n'));
+    logger.info(chalk.gray('💡 Tip: Review the test and run it with:'));
     const testCmd = config.testFramework === 'jest' ? 'npm test' : 'pnpm test';
-    console.log(chalk.cyan('   ' + testCmd + '\n'));
+    logger.info(chalk.cyan('   ' + testCmd + '\n'));
 
   } catch (error) {
     spinner.fail('Generation failed');
-    console.error(chalk.red('\n❌ Error:'), error);
+    logger.error(chalk.red('\n❌ Error:'), error);
     
     const errorMsg = String(error);
     if (errorMsg.includes('OPENAI_API_KEY')) {
-      console.log(chalk.gray('\n💡 Make sure your API key is set correctly\n'));
+      logger.info(chalk.gray('\n💡 Make sure your API key is set correctly\n'));
     } else if (errorMsg.includes('not found')) {
-      console.log(chalk.gray('\n💡 Check that the file and function name are correct\n'));
+      logger.info(chalk.gray('\n💡 Check that the file and function name are correct\n'));
     }
     
     process.exit(1);
@@ -101,9 +104,9 @@ const generateUnitTest = async (
   try {
     if (!options.function) {
       spinner.fail('Function name required');
-      console.log(chalk.red('\n❌ Please specify a function name with --function <name>\n'));
-      console.log(chalk.gray('Example:'));
-      console.log(chalk.cyan('  testmind generate src/utils/math.ts --function add\n'));
+      logger.info(chalk.red('\n❌ Please specify a function name with --function <name>\n'));
+      logger.info(chalk.gray('Example:'));
+      logger.info(chalk.cyan('  testmind generate src/utils/math.ts --function add\n'));
       return;
     }
 
@@ -113,18 +116,18 @@ const generateUnitTest = async (
 
     spinner.succeed('Function analysis complete');
     
-    console.log(chalk.bold('\n📊 Function Analysis:\n'));
-    console.log('   Function: ' + chalk.cyan(functionContext.signature.name + '()'));
-    console.log('   Parameters: ' + functionContext.signature.parameters.length);
-    console.log('   Async: ' + (functionContext.signature.isAsync ? chalk.green('Yes') : chalk.gray('No')));
-    console.log('   Complexity: ' + chalk.yellow(String(functionContext.complexity.cyclomaticComplexity)));
-    console.log('   Dependencies: ' + functionContext.dependencies.length);
+    logger.info(chalk.bold('\n📊 Function Analysis:\n'));
+    logger.info('   Function: ' + chalk.cyan(functionContext.signature.name + '()'));
+    logger.info('   Parameters: ' + functionContext.signature.parameters.length);
+    logger.info('   Async: ' + (functionContext.signature.isAsync ? chalk.green('Yes') : chalk.gray('No')));
+    logger.info('   Complexity: ' + chalk.yellow(String(functionContext.complexity.cyclomaticComplexity)));
+    logger.info('   Dependencies: ' + functionContext.dependencies.length);
     const sideEffectsMsg = functionContext.sideEffects.length > 0 
       ? chalk.yellow(String(functionContext.sideEffects.length))
       : chalk.green('None');
-    console.log('   Side Effects: ' + sideEffectsMsg);
+    logger.info('   Side Effects: ' + sideEffectsMsg);
 
-    console.log(chalk.bold('\n🤖 Generating test with AI...\n'));
+    logger.info(chalk.bold('\n🤖 Generating test with AI...\n'));
     spinner.start('Calling OpenAI API (this may take 10-30 seconds)...');
     
     const testSuite = await testGenerator.generateUnitTest(functionContext, config.id);
@@ -133,18 +136,18 @@ const generateUnitTest = async (
 
     if (testSuite.metadata && 'cost' in testSuite.metadata) {
       const cost = (testSuite.metadata as any).cost;
-      console.log(chalk.gray('   💰 Estimated cost: ~$' + cost.toFixed(4)));
+      logger.info(chalk.gray('   💰 Estimated cost: ~$' + cost.toFixed(4)));
     }
 
     // ===== Diff-First Review Flow =====
-    console.log(chalk.green.bold('\n📋 Diff-First Review: Please review the proposed test\n'));
+    logger.info(chalk.green.bold('\n📋 Diff-First Review: Please review the proposed test\n'));
 
     const reviewer = new TestReviewer();
     const diffResult = await reviewer.generateDiff(testSuite);
 
     // Display diff
-    console.log(reviewer.formatForCLI(diffResult));
-    console.log('\n');
+    logger.info(reviewer.formatForCLI(diffResult));
+    logger.info('\n');
 
     // Interactive review
     const inquirer = (await import('inquirer')).default;
@@ -164,12 +167,12 @@ const generateUnitTest = async (
     ]);
 
     if (action === 'reject') {
-      console.log(chalk.yellow('\n⚠️  Test rejected. No changes made.\n'));
+      logger.info(chalk.yellow('\n⚠️  Test rejected. No changes made.\n'));
       return;
     }
 
     if (action === 'regenerate') {
-      console.log(chalk.cyan('\n🔄 Regenerating test...\n'));
+      logger.info(chalk.cyan('\n🔄 Regenerating test...\n'));
       // Recursively call generateUnitTest
       return await generateUnitTest(contextEngine, testGenerator, filePath, options, config);
     }
@@ -204,28 +207,28 @@ const generateUnitTest = async (
               'Created branch: ' + chalk.cyan(gitResult.branchName)
             );
 
-            console.log(chalk.green('\n✅ Success! Test committed to new branch.\n'));
-            console.log(chalk.gray('📍 Branch: ' + chalk.cyan(gitResult.branchName)));
+            logger.info(chalk.green('\n✅ Success! Test committed to new branch.\n'));
+            logger.info(chalk.gray('📍 Branch: ' + chalk.cyan(gitResult.branchName)));
           } else {
             gitSpinner.info('Not a Git repository - skipping commit');
-            console.log(chalk.green('\n✅ Success! Test file created.\n'));
+            logger.info(chalk.green('\n✅ Success! Test file created.\n'));
           }
         } catch (gitError) {
           gitSpinner.warn('Git commit failed - test still saved');
-          console.log(chalk.yellow('\n⚠️  Test saved but Git commit failed: ' + gitError));
+          logger.info(chalk.yellow('\n⚠️  Test saved but Git commit failed: ' + gitError));
         }
       } else {
-        console.log(chalk.green('\n✅ Success! Test file created.\n'));
+        logger.info(chalk.green('\n✅ Success! Test file created.\n'));
       }
 
-      console.log(chalk.gray('Next steps:'));
-      console.log(chalk.gray('  1. Review the test: ' + testSuite.filePath));
+      logger.info(chalk.gray('Next steps:'));
+      logger.info(chalk.gray('  1. Review the test: ' + testSuite.filePath));
       const runCmd = config.testFramework === 'jest' ? 'npm test' : 'pnpm test';
-      console.log(chalk.gray('  2. Run tests: ' + runCmd + '\n'));
+      logger.info(chalk.gray('  2. Run tests: ' + runCmd + '\n'));
 
     } catch (error) {
       saveSpinner.fail('Failed to apply test');
-      console.log(chalk.red('\n❌ Error: ' + error + '\n'));
+      logger.info(chalk.red('\n❌ Error: ' + error + '\n'));
     }
 
   } catch (error) {
@@ -242,9 +245,9 @@ const generateIntegrationTest = async (
 ) => {
   const spinner = ora('Analyzing module...').start();
 
-  console.log(chalk.yellow('\n⚠️  Integration test generation is coming in Month 3-4.\n'));
-  console.log(chalk.gray('For now, please use unit test generation:\n'));
-  console.log(chalk.cyan('  testmind generate <file> --function <name>\n'));
+  logger.info(chalk.yellow('\n⚠️  Integration test generation is coming in Month 3-4.\n'));
+  logger.info(chalk.gray('For now, please use unit test generation:\n'));
+  logger.info(chalk.cyan('  testmind generate <file> --function <name>\n'));
   
   spinner.stop();
 };

@@ -12,6 +12,9 @@ import type { LLMRequest, LLMResponse } from '@testmind/shared';
 import type { LLMProvider } from '../LLMService';
 import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { createComponentLogger } from '../../utils/logger';
+
+const logger = createComponentLogger('OpenAIProvider');
 
 export class OpenAIProvider implements LLMProvider {
   private apiKey: string | undefined;
@@ -42,7 +45,7 @@ export class OpenAIProvider implements LLMProvider {
     const baseURL = process.env.OPENAI_API_BASE_URL || process.env.OPENAI_API_BASE || 'https://api.openai.com/v1';
     const modelName = process.env.OPENAI_MODEL || 'gpt-4-turbo-preview';
     
-    console.log(`[OpenAIProvider] Initializing with baseURL: ${baseURL}, model: ${modelName}`);
+    logger.info(`[OpenAIProvider] Initializing with baseURL: ${baseURL}, model: ${modelName}`);
 
     // 支持自定义maxTokens，默认10000以支持复杂测试生成
     const maxTokens = parseInt(process.env.OPENAI_MAX_TOKENS || '10000', 10);
@@ -77,8 +80,8 @@ export class OpenAIProvider implements LLMProvider {
       throw new Error('Failed to initialize OpenAI client');
     }
 
-    console.log(`[OpenAIProvider] Calling OpenAI API (model: ${request.model})`);
-    console.log(`[OpenAIProvider] Temperature: ${request.temperature}, MaxTokens: ${request.maxTokens}`);
+    logger.info(`[OpenAIProvider] Calling OpenAI API (model: ${request.model})`);
+    logger.info(`[OpenAIProvider] Temperature: ${request.temperature}, MaxTokens: ${request.maxTokens}`);
 
     try {
       // Override client settings with request parameters
@@ -99,7 +102,7 @@ export class OpenAIProvider implements LLMProvider {
       const response = await this.client.invoke(messages);
       const duration = Date.now() - startTime;
 
-      console.log(`[OpenAIProvider] API call successful (${duration}ms)`);
+      logger.info(`[OpenAIProvider] API call successful (${duration}ms)`);
 
       // Extract content
       const content = typeof response.content === 'string' 
@@ -118,7 +121,7 @@ export class OpenAIProvider implements LLMProvider {
       const outputCost = (usage.completionTokens / 1000) * 0.03; // $0.03/1K tokens
       const totalCost = inputCost + outputCost;
 
-      console.log(`[OpenAIProvider] Token usage: ${usage.totalTokens} (cost: ~$${totalCost.toFixed(4)})`);
+      logger.info(`[OpenAIProvider] Token usage: ${usage.totalTokens} (cost: ~$${totalCost.toFixed(4)})`);
 
       return {
         content,
@@ -136,7 +139,7 @@ export class OpenAIProvider implements LLMProvider {
       };
 
     } catch (error: any) {
-      console.error('[OpenAIProvider] API call failed:', error);
+      logger.error('[OpenAIProvider] API call failed:', error);
 
       // Provide helpful error messages
       if (error.message?.includes('401')) {

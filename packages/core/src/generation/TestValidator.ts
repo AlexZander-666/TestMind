@@ -14,6 +14,9 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('TestValidator');
 
 const execAsync = promisify(exec);
 
@@ -115,7 +118,7 @@ const testCases = [
 ${testCases}
 ];
 
-console.log('=== ${functionName} 期望值验证 ===\\n');
+logger.info('=== ${functionName} 期望值验证 ===\\n');
 
 const results = testCases.map((testCase, index) => {
   try {
@@ -146,12 +149,12 @@ const results = testCases.map((testCase, index) => {
 });
 
 // 输出结果
-console.log('| # | 输入 | 期望 | 实际 | 匹配 |');
-console.log('|---|------|------|------|------|');
+logger.info('| # | 输入 | 期望 | 实际 | 匹配 |');
+logger.info('|---|------|------|------|------|');
 
 results.forEach(r => {
   const status = r.match ? '✅' : '❌';
-  console.log(\`| \${r.index} | \${r.input} | \${r.expected} | \${r.actual} | \${status} |\`);
+  logger.info(\`| \${r.index} | \${r.input} | \${r.expected} | \${r.actual} | \${status} |\`);
 });
 
 // 统计
@@ -159,17 +162,17 @@ const matched = results.filter(r => r.match).length;
 const total = results.length;
 const accuracy = ((matched / total) * 100).toFixed(1);
 
-console.log('\\n=== 统计 ===');
-console.log(\`总计: \${total}\`);
-console.log(\`匹配: \${matched}\`);
-console.log(\`不匹配: \${total - matched}\`);
-console.log(\`准确率: \${accuracy}%\`);
+logger.info('\\n=== 统计 ===');
+logger.info(\`总计: \${total}\`);
+logger.info(\`匹配: \${matched}\`);
+logger.info(\`不匹配: \${total - matched}\`);
+logger.info(\`准确率: \${accuracy}%\`);
 
 // 输出不匹配的详情（供自动修正使用）
 const mismatches = results.filter(r => !r.match);
 if (mismatches.length > 0) {
-  console.log('\\n=== 不匹配详情（JSON） ===');
-  console.log(JSON.stringify(mismatches, null, 2));
+  logger.info('\\n=== 不匹配详情（JSON） ===');
+  logger.info(JSON.stringify(mismatches, null, 2));
 }
 
 process.exit(mismatches.length > 0 ? 1 : 0);
@@ -221,7 +224,7 @@ process.exit(mismatches.length > 0 ? 1 : 0);
             lineNumber: m.line || 0,
           }));
         } catch (e) {
-          console.warn('Failed to parse mismatch JSON:', e);
+          logger.warn('Failed to parse mismatch JSON:', e);
         }
       }
 

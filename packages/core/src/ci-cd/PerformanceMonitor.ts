@@ -9,6 +9,9 @@
  */
 
 import * as fs from 'fs/promises';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('PerformanceMonitor');
 
 /**
  * 测试运行数据
@@ -164,7 +167,7 @@ export class PerformanceMonitor {
     currentRunPath: string,
     baselinePath: string
   ): Promise<PerformanceComparisonResult> {
-    console.log('[PerformanceMonitor] Detecting performance regression...');
+    logger.info('[PerformanceMonitor] Detecting performance regression...');
 
     // 1. 加载运行数据
     const currentRun = await this.loadTestRun(currentRunPath);
@@ -227,10 +230,10 @@ export class PerformanceMonitor {
 
     const criticalRegressions = regressions.filter(r => r.severity === 'critical').length;
 
-    console.log('[PerformanceMonitor] Detection complete:');
-    console.log(`  - Regressions: ${regressions.length} (${criticalRegressions} critical)`);
-    console.log(`  - Improvements: ${improvements.length}`);
-    console.log(`  - Overall change: ${changePercentage > 0 ? '+' : ''}${changePercentage.toFixed(1)}%`);
+    logger.info('[PerformanceMonitor] Detection complete:');
+    logger.info(`  - Regressions: ${regressions.length} (${criticalRegressions} critical)`);
+    logger.info(`  - Improvements: ${improvements.length}`);
+    logger.info(`  - Overall change: ${changePercentage > 0 ? '+' : ''}${changePercentage.toFixed(1)}%`);
 
     return {
       overall: {
@@ -257,7 +260,7 @@ export class PerformanceMonitor {
   async saveBaseline(runPath: string, baselinePath: string): Promise<void> {
     const run = await this.loadTestRun(runPath);
     await fs.writeFile(baselinePath, JSON.stringify(run, null, 2));
-    console.log(`[PerformanceMonitor] Baseline saved to: ${baselinePath}`);
+    logger.info(`[PerformanceMonitor] Baseline saved to: ${baselinePath}`);
   }
 
   /**

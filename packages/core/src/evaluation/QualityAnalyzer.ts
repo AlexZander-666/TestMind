@@ -8,6 +8,9 @@
  */
 
 import type { TestSuite, QualityScore, AntiPattern } from '@testmind/shared';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('QualityAnalyzer');
 
 export interface ExtendedQualityScore extends QualityScore {
   assertionDiversity?: number;
@@ -20,7 +23,7 @@ export class QualityAnalyzer {
    * Analyze test suite quality with extended metrics
    */
   async analyze(testSuite: TestSuite): Promise<ExtendedQualityScore> {
-    console.log(`[QualityAnalyzer] Analyzing: ${testSuite.id}`);
+    logger.info(`[QualityAnalyzer] Analyzing: ${testSuite.id}`);
 
     // Analyze different quality dimensions
     const assertionQuality = this.analyzeAssertions(testSuite.code);

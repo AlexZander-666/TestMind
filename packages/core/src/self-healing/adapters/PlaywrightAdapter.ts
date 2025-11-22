@@ -6,6 +6,9 @@
 
 import type { Page, Locator, ElementHandle as PWElementHandle } from 'playwright';
 import type { BrowserAdapter, ElementHandle, BrowserAdapterFactory } from './BrowserAdapter';
+import { createComponentLogger } from '../../utils/logger';
+
+const logger = createComponentLogger('PlaywrightAdapter');
 
 /**
  * Playwright 适配器实现
@@ -26,7 +29,7 @@ export class PlaywrightAdapter implements BrowserAdapter {
       
       return this.wrapElement(element);
     } catch (error) {
-      console.debug(`[PlaywrightAdapter] findElement failed: ${selector}`, error);
+      logger.debug(`[PlaywrightAdapter] findElement failed: ${selector}`, error);
       return null;
     }
   }
@@ -39,7 +42,7 @@ export class PlaywrightAdapter implements BrowserAdapter {
       const elements = await this.page.$$(selector);
       return Promise.all(elements.map(el => this.wrapElement(el)));
     } catch (error) {
-      console.debug(`[PlaywrightAdapter] findElements failed: ${selector}`, error);
+      logger.debug(`[PlaywrightAdapter] findElements failed: ${selector}`, error);
       return [];
     }
   }
@@ -52,7 +55,7 @@ export class PlaywrightAdapter implements BrowserAdapter {
       const pwElement = this.unwrapElement(element);
       return await pwElement.getAttribute(attr);
     } catch (error) {
-      console.debug(`[PlaywrightAdapter] getAttribute failed: ${attr}`, error);
+      logger.debug(`[PlaywrightAdapter] getAttribute failed: ${attr}`, error);
       return null;
     }
   }
@@ -83,7 +86,7 @@ export class PlaywrightAdapter implements BrowserAdapter {
       
       return styles;
     } catch (error) {
-      console.debug(`[PlaywrightAdapter] getComputedStyles failed`, error);
+      logger.debug(`[PlaywrightAdapter] getComputedStyles failed`, error);
       return {};
     }
   }
@@ -97,7 +100,7 @@ export class PlaywrightAdapter implements BrowserAdapter {
       const text = await pwElement.textContent();
       return text || '';
     } catch (error) {
-      console.debug(`[PlaywrightAdapter] getTextContent failed`, error);
+      logger.debug(`[PlaywrightAdapter] getTextContent failed`, error);
       return '';
     }
   }
@@ -110,7 +113,7 @@ export class PlaywrightAdapter implements BrowserAdapter {
       const pwElement = this.unwrapElement(element);
       return await pwElement.isVisible();
     } catch (error) {
-      console.debug(`[PlaywrightAdapter] isVisible failed`, error);
+      logger.debug(`[PlaywrightAdapter] isVisible failed`, error);
       return false;
     }
   }
@@ -124,7 +127,7 @@ export class PlaywrightAdapter implements BrowserAdapter {
       const buffer = await pwElement.screenshot({ type: 'png' });
       return buffer;
     } catch (error) {
-      console.error(`[PlaywrightAdapter] screenshot failed`, error);
+      logger.error(`[PlaywrightAdapter] screenshot failed`, error);
       throw error;
     }
   }
@@ -140,7 +143,7 @@ export class PlaywrightAdapter implements BrowserAdapter {
       });
       return buffer;
     } catch (error) {
-      console.error(`[PlaywrightAdapter] screenshotPage failed`, error);
+      logger.error(`[PlaywrightAdapter] screenshotPage failed`, error);
       throw error;
     }
   }
@@ -159,7 +162,7 @@ export class PlaywrightAdapter implements BrowserAdapter {
       const box = await pwElement.boundingBox();
       return box;
     } catch (error) {
-      console.debug(`[PlaywrightAdapter] getBoundingBox failed`, error);
+      logger.debug(`[PlaywrightAdapter] getBoundingBox failed`, error);
       return null;
     }
   }
@@ -193,7 +196,7 @@ export class PlaywrightAdapter implements BrowserAdapter {
       if (!element) return null;
       return this.wrapElement(element);
     } catch (error) {
-      console.debug(`[PlaywrightAdapter] waitForElement timeout: ${selector}`);
+      logger.debug(`[PlaywrightAdapter] waitForElement timeout: ${selector}`);
       return null;
     }
   }
@@ -261,7 +264,7 @@ export class PlaywrightAdapter implements BrowserAdapter {
       
       return dom;
     } catch (error) {
-      console.error(`[PlaywrightAdapter] getSimplifiedDOM failed`, error);
+      logger.error(`[PlaywrightAdapter] getSimplifiedDOM failed`, error);
       return '<error>Failed to extract DOM</error>';
     }
   }

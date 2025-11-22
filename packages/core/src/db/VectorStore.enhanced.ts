@@ -13,6 +13,9 @@
 import type { CodeChunk, SemanticSearchResult } from '@testmind/shared';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('VectorStore_enhanced');
 
 /**
  * LanceDB 表模式
@@ -81,7 +84,7 @@ export class EnhancedVectorStore {
    * 初始化向量数据库
    */
   async initialize(): Promise<void> {
-    console.log('[VectorStore] Initializing LanceDB...');
+    logger.info('[VectorStore] Initializing LanceDB...');
     
     try {
       // 确保数据库目录存在
@@ -91,9 +94,9 @@ export class EnhancedVectorStore {
       await this.loadExistingData();
 
       this.initialized = true;
-      console.log('[VectorStore] Initialization complete');
+      logger.info('[VectorStore] Initialization complete');
     } catch (error) {
-      console.error('[VectorStore] Initialization failed:', error);
+      logger.error('[VectorStore] Initialization failed:', error);
       throw error;
     }
 
@@ -140,7 +143,7 @@ export class EnhancedVectorStore {
   async insertChunks(chunks: CodeChunk[]): Promise<void> {
     this.ensureInitialized();
     
-    console.log(`[VectorStore] Inserting ${chunks.length} chunks`);
+    logger.info(`[VectorStore] Inserting ${chunks.length} chunks`);
     
     const BATCH_SIZE = 100;
     let inserted = 0;
@@ -175,13 +178,13 @@ export class EnhancedVectorStore {
         inserted++;
       }
 
-      console.log(`[VectorStore] Progress: ${inserted}/${chunks.length}`);
+      logger.info(`[VectorStore] Progress: ${inserted}/${chunks.length}`);
     }
 
     // 持久化到磁盘
     await this.persist();
 
-    console.log(`[VectorStore] Successfully inserted ${inserted} chunks`);
+    logger.info(`[VectorStore] Successfully inserted ${inserted} chunks`);
 
     /* 真实 LanceDB 批量插入：
     
@@ -213,7 +216,7 @@ export class EnhancedVectorStore {
 
     const k = options.k || 5;
     
-    console.log(`[VectorStore] Searching for top ${k} similar chunks`);
+    logger.info(`[VectorStore] Searching for top ${k} similar chunks`);
 
     // 获取所有候选
     let candidates = Array.from(this.chunks.values());
@@ -277,7 +280,7 @@ export class EnhancedVectorStore {
   async updateFile(filePath: string, chunks: CodeChunk[]): Promise<void> {
     this.ensureInitialized();
     
-    console.log(`[VectorStore] Updating embeddings for: ${filePath}`);
+    logger.info(`[VectorStore] Updating embeddings for: ${filePath}`);
 
     // 1. 删除旧的 chunks
     await this.deleteFile(filePath);
@@ -285,7 +288,7 @@ export class EnhancedVectorStore {
     // 2. 插入新的 chunks
     await this.insertChunks(chunks);
 
-    console.log(`[VectorStore] File updated: ${filePath}`);
+    logger.info(`[VectorStore] File updated: ${filePath}`);
 
     /* 真实 LanceDB 更新：
     
@@ -313,7 +316,7 @@ export class EnhancedVectorStore {
     
     await this.persist();
 
-    console.log(`[VectorStore] Deleted ${chunkIds.length} chunks for: ${filePath}`);
+    logger.info(`[VectorStore] Deleted ${chunkIds.length} chunks for: ${filePath}`);
 
     /* 真实 LanceDB 删除：
     
@@ -357,7 +360,7 @@ export class EnhancedVectorStore {
       this.chunks.clear();
       this.fileIndex.clear();
       this.initialized = false;
-      console.log('[VectorStore] Closed');
+      logger.info('[VectorStore] Closed');
     }
 
     /* 真实 LanceDB 关闭：
@@ -373,7 +376,7 @@ export class EnhancedVectorStore {
     this.chunks.clear();
     this.fileIndex.clear();
     await this.persist();
-    console.log('[VectorStore] All data cleared');
+    logger.info('[VectorStore] All data cleared');
   }
 
   /**
@@ -493,10 +496,10 @@ export class EnhancedVectorStore {
         this.fileIndex.set(filePath, chunkIds as string[]);
       }
 
-      console.log(`[VectorStore] Loaded ${this.chunks.size} existing chunks`);
+      logger.info(`[VectorStore] Loaded ${this.chunks.size} existing chunks`);
     } catch (error) {
       // 数据文件不存在，这是正常的首次运行
-      console.log('[VectorStore] No existing data found, starting fresh');
+      logger.info('[VectorStore] No existing data found, starting fresh');
     }
   }
 

@@ -6,6 +6,9 @@
 import { Command } from 'commander';
 import { GitAutomation } from '@testmind/core';
 import chalk from 'chalk';
+import { createComponentLogger } from '../../../core/src/utils/logger';
+
+const logger = createComponentLogger('undo');
 
 export function createUndoCommand(): Command {
   const cmd = new Command('undo');
@@ -34,39 +37,39 @@ async function undoCommand(options: UndoOptions) {
     // Check if it's a Git repository
     const isGit = await git.isGitRepo();
     if (!isGit) {
-      console.error(chalk.red('Error: Not a Git repository'));
-      console.log(chalk.gray('Initialize Git with: git init'));
+      logger.error(chalk.red('Error: Not a Git repository'));
+      logger.info(chalk.gray('Initialize Git with: git init'));
       process.exit(1);
     }
 
     // Show history if requested
     if (options.showHistory) {
-      console.log(chalk.blue('📜 Recent commits:\n'));
+      logger.info(chalk.blue('📜 Recent commits:\n'));
       const commits = await git.getRecentCommits(5);
       commits.forEach((commit, index) => {
         const marker = index === 0 ? chalk.yellow('→') : ' ';
-        console.log(`${marker} ${chalk.gray(commit.hash)} ${commit.message}`);
-        console.log(`  ${chalk.gray(commit.date)} by ${commit.author}`);
+        logger.info(`${marker} ${chalk.gray(commit.hash)} ${commit.message}`);
+        logger.info(`  ${chalk.gray(commit.date)} by ${commit.author}`);
       });
-      console.log();
+      logger.info();
     }
 
     // Check if last commit is from TestMind
     const isTestMindCommit = await git.isLastCommitFromTestMind();
     if (!isTestMindCommit) {
-      console.log(chalk.yellow('⚠️  Warning: The last commit was not made by TestMind'));
-      console.log(chalk.gray('You are about to undo a manual commit.'));
+      logger.info(chalk.yellow('⚠️  Warning: The last commit was not made by TestMind'));
+      logger.info(chalk.gray('You are about to undo a manual commit.'));
       
       // In a real implementation, we'd prompt for confirmation here
       // For now, we'll proceed but warn the user
-      console.log(chalk.gray('Proceeding anyway...\n'));
+      logger.info(chalk.gray('Proceeding anyway...\n'));
     }
 
     // Perform undo
     if (options.hard) {
       // Show strong warning for destructive operation
-      console.log(chalk.red.bold('⚠️  WARNING: This will permanently discard all changes!'));
-      console.log(chalk.gray('This operation cannot be reversed.\n'));
+      logger.info(chalk.red.bold('⚠️  WARNING: This will permanently discard all changes!'));
+      logger.info(chalk.gray('This operation cannot be reversed.\n'));
       
       // In production, we should prompt for confirmation
       // For now, we'll proceed with the operation
@@ -74,30 +77,30 @@ async function undoCommand(options: UndoOptions) {
       const result = await git.undoAndDiscard();
       
       if (result.success) {
-        console.log(chalk.green('✓ Commit undone and changes discarded'));
-        console.log(chalk.gray(`  ${result.message}`));
+        logger.info(chalk.green('✓ Commit undone and changes discarded'));
+        logger.info(chalk.gray(`  ${result.message}`));
       } else {
-        console.log(chalk.yellow(result.message));
+        logger.info(chalk.yellow(result.message));
       }
     } else {
       // Soft undo - keep changes
       const result = await git.undoLastCommit();
       
       if (result.success) {
-        console.log(chalk.green('✓ Commit undone (changes preserved in working directory)'));
-        console.log(chalk.gray(`  ${result.message}`));
-        console.log();
-        console.log(chalk.blue('Next steps:'));
-        console.log(chalk.gray('  - Review changes: git status'));
-        console.log(chalk.gray('  - Make modifications and commit again'));
-        console.log(chalk.gray('  - Or discard changes: git reset --hard'));
+        logger.info(chalk.green('✓ Commit undone (changes preserved in working directory)'));
+        logger.info(chalk.gray(`  ${result.message}`));
+        logger.info();
+        logger.info(chalk.blue('Next steps:'));
+        logger.info(chalk.gray('  - Review changes: git status'));
+        logger.info(chalk.gray('  - Make modifications and commit again'));
+        logger.info(chalk.gray('  - Or discard changes: git reset --hard'));
       } else {
-        console.log(chalk.yellow(result.message));
+        logger.info(chalk.yellow(result.message));
       }
     }
 
   } catch (error: any) {
-    console.error(chalk.red('Error undoing commit:'), error.message);
+    logger.error(chalk.red('Error undoing commit:'), error.message);
     process.exit(1);
   }
 }

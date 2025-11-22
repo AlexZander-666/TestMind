@@ -18,6 +18,9 @@
 import * as readline from 'readline';
 import type { FileDiff, DiffHunk } from './DiffGenerator';
 import { DiffGenerator } from './DiffGenerator';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('DiffReviewer');
 
 // Chalk colors for diff output
 const colors = {
@@ -105,8 +108,8 @@ export class DiffReviewer {
     });
 
     try {
-      console.log('\n📝 Starting interactive diff review...\n');
-      console.log(`Total diffs to review: ${diffs.length}\n`);
+      logger.info('\n📝 Starting interactive diff review...\n');
+      logger.info(`Total diffs to review: ${diffs.length}\n`);
 
       for (const diff of diffs) {
         const decision = await this.reviewFileDiff(diff);
@@ -135,8 +138,8 @@ export class DiffReviewer {
    * 审查单个文件 diff
    */
   private async reviewFileDiff(diff: FileDiff): Promise<ReviewDecision> {
-    console.log(colors.cyan('═'.repeat(80)));
-    console.log(`\n${colors.bold('📄 File:')} ${colors.blue(diff.filePath)}\n`);
+    logger.info(colors.cyan('═'.repeat(80)));
+    logger.info(`\n${colors.bold('📄 File:')} ${colors.blue(diff.filePath)}\n`);
 
     // 显示变更统计
     this.displayChangeStatistics(diff);
@@ -145,10 +148,10 @@ export class DiffReviewer {
     if (this.options.colorOutput) {
       this.displayColoredDiff(diff);
     } else {
-      console.log(diff.diff || '(no diff content)');
+      logger.info(diff.diff || '(no diff content)');
     }
 
-    console.log('\n' + colors.dim('─'.repeat(80)) + '\n');
+    logger.info('\n' + colors.dim('─'.repeat(80)) + '\n');
 
     // 获取用户决定
     const action = await this.promptForAction();
@@ -167,8 +170,8 @@ export class DiffReviewer {
     const deletions = diff.deletions || 0;
     const total = additions + deletions;
     
-    console.log(colors.dim('─'.repeat(80)));
-    console.log(`${colors.bold('Changes:')} ${colors.green(`+${additions}`)} ${colors.red(`-${deletions}`)} (${total} total)`);
+    logger.info(colors.dim('─'.repeat(80)));
+    logger.info(`${colors.bold('Changes:')} ${colors.green(`+${additions}`)} ${colors.red(`-${deletions}`)} (${total} total)`);
     
     // Visual bar
     const barLength = 50;
@@ -176,8 +179,8 @@ export class DiffReviewer {
     const delBar = barLength - addBar;
     
     const bar = colors.green('█'.repeat(addBar)) + colors.red('█'.repeat(delBar));
-    console.log(bar);
-    console.log(colors.dim('─'.repeat(80)) + '\n');
+    logger.info(bar);
+    logger.info(colors.dim('─'.repeat(80)) + '\n');
   }
   
   /**
@@ -188,15 +191,15 @@ export class DiffReviewer {
     
     for (const line of lines) {
       if (line.startsWith('+++') || line.startsWith('---')) {
-        console.log(colors.bold(line));
+        logger.info(colors.bold(line));
       } else if (line.startsWith('+')) {
-        console.log(colors.green(line));
+        logger.info(colors.green(line));
       } else if (line.startsWith('-')) {
-        console.log(colors.red(line));
+        logger.info(colors.red(line));
       } else if (line.startsWith('@@')) {
-        console.log(colors.cyan(line));
+        logger.info(colors.cyan(line));
       } else {
-        console.log(colors.dim(line));
+        logger.info(colors.dim(line));
       }
     }
   }
@@ -222,38 +225,38 @@ ${colors.bold('Your choice:')} `;
     switch (choice) {
       case 'a':
       case 'accept':
-        console.log(colors.green('✅ Accepted') + '\n');
+        logger.info(colors.green('✅ Accepted') + '\n');
         return 'accept';
       
       case 'r':
       case 'reject':
-        console.log(colors.red('❌ Rejected') + '\n');
+        logger.info(colors.red('❌ Rejected') + '\n');
         return 'reject';
       
       case 'e':
       case 'edit':
-        console.log(colors.yellow('⚠️  Edit mode planned for future release') + '\n');
-        console.log('Would you like to (a)ccept or (r)eject instead?\n');
+        logger.info(colors.yellow('⚠️  Edit mode planned for future release') + '\n');
+        logger.info('Would you like to (a)ccept or (r)eject instead?\n');
         return this.promptForAction();
       
       case 'c':
       case 'comment':
-        console.log(colors.yellow('💬 Comment feature planned for future release') + '\n');
-        console.log('Continuing with review...\n');
+        logger.info(colors.yellow('💬 Comment feature planned for future release') + '\n');
+        logger.info('Continuing with review...\n');
         return this.promptForAction();
       
       case 's':
       case 'skip':
-        console.log(colors.cyan('⏭️  Skipped') + '\n');
+        logger.info(colors.cyan('⏭️  Skipped') + '\n');
         return 'skip';
       
       case 'q':
       case 'quit':
-        console.log(colors.dim('👋 Quitting review...') + '\n');
+        logger.info(colors.dim('👋 Quitting review...') + '\n');
         process.exit(0);
       
       default:
-        console.log(colors.red('❌ Invalid choice. Please try again.') + '\n');
+        logger.info(colors.red('❌ Invalid choice. Please try again.') + '\n');
         return this.promptForAction();
     }
   }
@@ -278,23 +281,23 @@ ${colors.bold('Your choice:')} `;
       ? ((result.totalAccepted / result.totalReviewed) * 100).toFixed(1)
       : '0';
     
-    console.log('\n' + colors.cyan('═'.repeat(80)));
-    console.log(`\n${colors.bold('📊 Review Summary')}\n`);
-    console.log(colors.dim('─'.repeat(80)));
-    console.log(`${colors.bold('Total Reviewed:')}  ${result.totalReviewed}`);
-    console.log(`${colors.green('✅ Accepted:')}     ${result.totalAccepted}`);
-    console.log(`${colors.red('❌ Rejected:')}     ${result.totalRejected}`);
-    console.log(`${colors.cyan('⏭️  Skipped:')}      ${skipped}`);
-    console.log(`${colors.bold('📈 Accept Rate:')}  ${acceptRate}%`);
-    console.log(colors.cyan('═'.repeat(80)) + '\n');
+    logger.info('\n' + colors.cyan('═'.repeat(80)));
+    logger.info(`\n${colors.bold('📊 Review Summary')}\n`);
+    logger.info(colors.dim('─'.repeat(80)));
+    logger.info(`${colors.bold('Total Reviewed:')}  ${result.totalReviewed}`);
+    logger.info(`${colors.green('✅ Accepted:')}     ${result.totalAccepted}`);
+    logger.info(`${colors.red('❌ Rejected:')}     ${result.totalRejected}`);
+    logger.info(`${colors.cyan('⏭️  Skipped:')}      ${skipped}`);
+    logger.info(`${colors.bold('📈 Accept Rate:')}  ${acceptRate}%`);
+    logger.info(colors.cyan('═'.repeat(80)) + '\n');
     
     if (result.totalAccepted > 0) {
-      console.log(colors.green(`✨ ${result.totalAccepted} diffs ready to apply!`));
+      logger.info(colors.green(`✨ ${result.totalAccepted} diffs ready to apply!`));
     }
     if (result.totalRejected > 0) {
-      console.log(colors.yellow(`⚠️  ${result.totalRejected} diffs rejected`));
+      logger.info(colors.yellow(`⚠️  ${result.totalRejected} diffs rejected`));
     }
-    console.log('');
+    logger.info('');
   }
 
   /**
@@ -354,9 +357,9 @@ ${colors.bold('Your choice:')} `;
       }
     }
 
-    console.log(`\n🔍 Confidence-based review:`);
-    console.log(`  - High confidence (auto-accept): ${highConfidenceDiffs.length}`);
-    console.log(`  - Low confidence (needs review): ${lowConfidenceDiffs.length}\n`);
+    logger.info(`\n🔍 Confidence-based review:`);
+    logger.info(`  - High confidence (auto-accept): ${highConfidenceDiffs.length}`);
+    logger.info(`  - Low confidence (needs review): ${lowConfidenceDiffs.length}\n`);
 
     // 自动接受高置信度
     const autoResult = await this.reviewNonInteractive(highConfidenceDiffs, true);

@@ -8,6 +8,9 @@
  */
 
 import type { LLMService } from '../llm/LLMService';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('FailureClassifier');
 
 export enum FailureType {
   /** 环境问题：网络超时、依赖服务不可用等 */
@@ -735,7 +738,7 @@ Format your response as JSON:
     // 3. 改进分类准确性
     
     // 暂时只记录到日志
-    console.log(`Learning: ${failure.testName} -> ${actualType}`);
+    logger.info(`Learning: ${failure.testName} -> ${actualType}`);
   }
 }
 

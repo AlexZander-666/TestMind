@@ -23,6 +23,8 @@ import type { LLMService } from '../llm/LLMService';
 import type { FileDiff } from './DiffGenerator';
 import { createComponentLogger } from '../utils/logger';
 
+const logger = createComponentLogger('GitIntegration');
+
 export interface GitOperationResult {
   success: boolean;
   branchName?: string;
@@ -380,7 +382,7 @@ Output only the commit message, nothing else.
 
       return response.content.trim();
     } catch (error) {
-      console.error('Failed to generate commit message:', error);
+      logger.error('Failed to generate commit message:', error);
       return this.generateBasicCommitMessage(diffs);
     }
   }

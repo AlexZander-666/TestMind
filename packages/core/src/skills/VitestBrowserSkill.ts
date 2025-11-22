@@ -13,6 +13,9 @@
 
 import { Skill } from './Skill';
 import type { LLMService } from '../llm/LLMService';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('VitestBrowserSkill');
 
 export interface VitestBrowserContext {
   /** 测试名称 */
@@ -59,7 +62,7 @@ export class VitestBrowserSkill {
    * 执行技能
    */
   async execute(context: VitestBrowserContext): Promise<{ code: string }> {
-    console.log(`[VitestBrowserSkill] Generating test: ${context.testName}`);
+    logger.info(`[VitestBrowserSkill] Generating test: ${context.testName}`);
 
     const prompt = this.buildPrompt(context);
 

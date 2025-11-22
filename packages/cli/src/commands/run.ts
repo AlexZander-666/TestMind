@@ -6,20 +6,23 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { TestEvaluator } from '@testmind/core';
 import { loadConfig } from '../utils/config';
+import { createComponentLogger } from '../../../core/src/utils/logger';
+
+const logger = createComponentLogger('run');
 
 export interface RunOptions {
   stabilityCheck?: boolean;
 }
 
 export const runCommand = async (suiteId: string | undefined, options: RunOptions) => {
-  console.log(chalk.bold.cyan('\n🧠 TestMind - Test Execution\n'));
+  logger.info(chalk.bold.cyan('\n🧠 TestMind - Test Execution\n'));
 
   const spinner = ora('Loading configuration...').start();
   const config = await loadConfig();
 
   if (!config) {
     spinner.fail('Not initialized');
-    console.log(chalk.red('\n❌ TestMind is not initialized in this project.\n'));
+    logger.info(chalk.red('\n❌ TestMind is not initialized in this project.\n'));
     process.exit(1);
   }
 
@@ -35,16 +38,16 @@ export const runCommand = async (suiteId: string | undefined, options: RunOption
       
       spinner.succeed('Tests completed');
       
-      console.log(chalk.green('\n✅ Test run completed\n'));
+      logger.info(chalk.green('\n✅ Test run completed\n'));
       // Display results...
     } else {
       spinner.warn('No suite ID provided');
-      console.log(chalk.yellow('\n⚠️  Please specify a test suite ID\n'));
-      console.log(chalk.gray('   Usage: testmind run <suite-id>\n'));
+      logger.info(chalk.yellow('\n⚠️  Please specify a test suite ID\n'));
+      logger.info(chalk.gray('   Usage: testmind run <suite-id>\n'));
     }
   } catch (error) {
     spinner.fail('Test execution failed');
-    console.error(chalk.red('\n❌ Error:'), error);
+    logger.error(chalk.red('\n❌ Error:'), error);
     process.exit(1);
   }
 };

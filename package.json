@@ -1,7 +1,7 @@
 {
   "name": "testmind",
-  "version": "0.6.0",
-  "description": "AI-powered test automation agent for modern development teams",
+  "version": "1.0.0",
+  "description": "Enterprise-grade AI-powered test automation platform with self-healing capabilities",
   "private": true,
   "author": "TestMind Team",
   "license": "MIT",

@@ -11,6 +11,9 @@
 
 import { Skill } from './Skill';
 import type { LLMService } from '../llm/LLMService';
+import { createComponentLogger } from '../utils/logger';
+
+const logger = createComponentLogger('CypressTestSkill_enhanced');
 
 /**
  * Cypress 测试上下文
@@ -109,7 +112,7 @@ export class EnhancedCypressTestSkill {
    * 生成测试代码
    */
   async execute(context: CypressTestContext): Promise<{ code: string }> {
-    console.log(`[CypressTestSkill] Generating enhanced test: ${context.testName}`);
+    logger.info(`[CypressTestSkill] Generating enhanced test: ${context.testName}`);
 
     // 1. 构建增强的 Prompt
     const prompt = this.buildEnhancedPrompt(context);
@@ -281,8 +284,8 @@ describe('Login Flow', () => {
       const className = selector.match(/\.[\w-]+/)?.[0]?.slice(1);
       if (className) {
         const testId = className.replace(/-/g, '_');
-        console.warn(`[CypressTestSkill] Fragile selector detected: ${selector}`);
-        console.warn(`  Suggestion: Use data-testid="${testId}" instead`);
+        logger.warn(`[CypressTestSkill] Fragile selector detected: ${selector}`);
+        logger.warn(`  Suggestion: Use data-testid="${testId}" instead`);
         // 注：实际替换需要更智能的逻辑，这里只是示例
       }
     }
@@ -332,8 +335,8 @@ describe('Login Flow', () => {
     const hardcodedWaits = code.match(/cy\.wait\(\d+\)/g) || [];
     
     for (const wait of hardcodedWaits) {
-      console.warn(`[CypressTestSkill] Hardcoded wait detected: ${wait}`);
-      console.warn(`  Suggestion: Use cy.wait('@alias') or .should() instead`);
+      logger.warn(`[CypressTestSkill] Hardcoded wait detected: ${wait}`);
+      logger.warn(`  Suggestion: Use cy.wait('@alias') or .should() instead`);
       
       // 添加注释标记
       enhanced = enhanced.replace(
@@ -486,7 +489,7 @@ export default defineConfig({
       // 可访问性测试
       on('task', {
         log(message) {
-          console.log(message);
+          logger.info(message);
           return null;
         },
       });

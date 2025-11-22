@@ -1,15 +1,11 @@
 # 🧠 TestMind - AI-Powered Full-Stack Testing Platform
 
-> **Transform Your Testing with AI** - Generate, maintain, and fix your entire test suite automatically
-
-**Current Version**: v0.6.0 | **License**: MIT | **Language**: TypeScript
-
-[![Version](https://img.shields.io/badge/version-0.6.0-blue)](https://github.com/AlexZander-666/TestMind/releases)
-[![Tests](https://img.shields.io/badge/tests-97%25%20passing-success)](https://github.com/AlexZander-666/TestMind)
-[![Coverage](https://img.shields.io/badge/coverage-92%25-success)](https://github.com/AlexZander-666/TestMind)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](package.json)
+[![Node](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](package.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](package.json)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Documentation](https://img.shields.io/badge/docs-testmind.io-blue.svg)](https://docs.testmind.io)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Us-7289da)](https://discord.gg/testmind)
 
 ---
