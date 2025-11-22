@@ -14,6 +14,22 @@
 
 ---
 
+## 🚀 Quick Start
+
+```bash
+# Install TestMind
+npm install -g @testmind/cli
+
+# Initialize in your project
+testmind init
+
+# Generate tests for your code
+testmind generate --framework playwright --type e2e
+
+# Run with self-healing enabled
+testmind run --self-heal
+```
+
 ## 🎯 What's New in v0.6.0
 
 ### 🏥 Enterprise-Grade Self-Healing Engine
@@ -47,6 +63,30 @@
 - **Real-time Cost Tracking** - Detailed cost analysis reports
 
 [View Full Changelog →](docs/release-notes/v0.6.0/CHANGELOG_v0.6.0.md) | [Quick Start Guide →](docs/release-notes/v0.6.0/QUICK_START_v0.6.0.md)
+
+---
+
+## ✨ Core Features
+
+### 🤖 AI-Powered Test Generation
+- Generate comprehensive test suites from your codebase
+- Support for Playwright, Cypress, Vitest, Jest, and more
+- Context-aware test creation using vector embeddings
+
+### 🔧 Self-Healing Tests
+- Automatically fix broken selectors
+- 5-level fallback strategy for element location
+- Reduce test maintenance by 70%
+
+### 📊 Intelligent Analytics
+- Test coverage gap analysis
+- Performance regression detection
+- Flaky test identification and fixes
+
+### 🔄 CI/CD Integration
+- GitHub Actions & GitLab CI native support
+- Automated test updates on code changes
+- Real-time test status monitoring
 
 ---
 
