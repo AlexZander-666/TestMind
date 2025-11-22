@@ -43,42 +43,6 @@ testmind generate --framework playwright --type e2e
 testmind run --self-heal
 ```
 
-## 🎯 What's New in v0.6.0
-
-### 🏥 Enterprise-Grade Self-Healing Engine
-- **70%+ Self-healing Success Rate** - Production verified
-- **5-Level Locator Strategy** - ID → CSS → XPath → Visual → Semantic
-- **Browser Adapters** - Native Playwright & Cypress support
-- **Smart Failure Classification** - 7 failure types auto-detected
-
-### 🗄️ Vector Database Integration
-- **Full LanceDB Support** - High-performance vector storage
-- **Hybrid Search Engine** - Vector + keyword + dependency fusion
-- **0.92+ Context Relevance** - Industry-leading retrieval accuracy
-- **Cost Optimization** - Incremental updates, $0.02/1M tokens
-
-### 🔄 Deep CI/CD Automation
-- **Auto Test Fix Workflow** - GitHub Actions/GitLab CI integration
-- **Coverage Gap Analysis** - Smart uncovered code detection
-- **Performance Regression Detection** - Auto baseline comparison
-- **Test Suggestion Generation** - AI-driven test prioritization
-
-### 🎯 Enhanced Test Framework Support
-- **Enhanced Cypress** - Visual regression + network stubbing
-- **Enhanced Playwright** - Multi-browser parallel + tracing
-- **Vitest Browser Mode** - Fast HMR + native ESM
-- **WebdriverIO** - Cross-platform mobile testing
-
-### 💰 Cost Optimization System
-- **Smart Model Selection** - GPT-4o-mini vs GPT-4
-- **Prompt Compression** - Up to 70% token savings
-- **Batch Processing** - 100 chunks/batch
-- **Real-time Cost Tracking** - Detailed cost analysis reports
-
-[View Full Changelog →](docs/release-notes/v0.6.0/CHANGELOG_v0.6.0.md) | [Quick Start Guide →](docs/release-notes/v0.6.0/QUICK_START_v0.6.0.md)
-
----
-
 ## ✨ Core Features
 
 ### 🤖 AI-Powered Test Generation
@@ -136,15 +100,15 @@ TestMind is an **AI-driven full-stack testing platform** designed for 1-10 perso
 ## 📚 Documentation
 
 **🚀 Getting Started**:
-- [Quick Start (v0.6.0)](docs/release-notes/v0.6.0/QUICK_START_v0.6.0.md) - 5分钟上手指南
-- [Installation Guide](docs/getting-started/installation.md) - 详细安装步骤
-- [Configuration](docs/getting-started/configuration.md) - 项目配置说明
+- [Quick Start Guide](docs/getting-started/quickstart.md) - Get up and running in 5 minutes
+- [Installation Guide](docs/getting-started/installation.md) - Detailed setup instructions
+- [Configuration](docs/getting-started/configuration.md) - Project configuration guide
 
-**📖 API Reference** (NEW in v0.6.0):
-- [Self-Healing API](docs/api-reference/self-healing.md) - 浏览器适配器、定位引擎、失败分类
-- [Vector Store API](docs/api-reference/vector-store.md) - 向量数据库、混合搜索、Embeddings
-- [CI/CD API](docs/api-reference/cicd.md) - 覆盖率分析、性能监控、工作流集成
-- [Skills API](docs/api-reference/skills.md) - 技能开发、注册、编排
+**📖 API Reference**:
+- [Self-Healing API](docs/api-reference/self-healing.md) - Browser adapters, locator engine, failure classification
+- [Vector Store API](docs/api-reference/vector-store.md) - Vector database, hybrid search, embeddings
+- [CI/CD API](docs/api-reference/cicd.md) - Coverage analysis, performance monitoring, workflow integration
+- [Skills API](docs/api-reference/skills.md) - Skill development, registration, orchestration
 
 **🏗️ Architecture Design**:
 - [Self-Healing Engine](docs/architecture/self-healing-engine.md) - 5级定位策略设计
