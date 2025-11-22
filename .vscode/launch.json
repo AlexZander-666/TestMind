@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode"
+      ],
+      "env": {
+        "TESTMIND_API_KEY": "sk-8ZP1cge3SxPFY5nwKB6poOWxDLJczqzk4vZ1LnryW0WjZCPh",
+        "TESTMIND_API_URL": "https://metahk.zenymes.com/v1",
+        "TESTMIND_MODEL": "gemini-2.5-pro"
+      },
+      "outFiles": [
+        "${workspaceFolder}/packages/vscode/dist/**/*.js",
+        "${workspaceFolder}/packages/vscode/out/**/*.js",
+        "${workspaceFolder}/packages/vscode/src/**/*.ts"
+      ],
+      "sourceMaps": true
+    }
+  ]
+}
+
+

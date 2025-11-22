@@ -1,0 +1,243 @@
+# TestMind Auto-Heal Pipeline for GitLab CI
+# 
+# 用法：在主 .gitlab-ci.yml 中包含此文件
+# include:
+#   - local: '.gitlab-ci.testmind.yml'
+
+variables:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "8"
+
+stages:
+  - build
+  - test
+  - heal
+  - report
+
+# 缓存配置
+.node_cache:
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - node_modules/
+      - .pnpm-store/
+
+# 安装依赖
+install:
+  extends: .node_cache
+  stage: build
+  image: node:${NODE_VERSION}
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm@${PNPM_VERSION} --activate
+  script:
+    - pnpm install --frozen-lockfile
+    - pnpm build
+  artifacts:
+    paths:
+      - packages/*/dist/
+      - node_modules/
+    expire_in: 1 hour
+
+# 运行测试
+test:
+  extends: .node_cache
+  stage: test
+  image: node:${NODE_VERSION}
+  dependencies:
+    - install
+  script:
+    - pnpm test --reporter=json --outputFile=test-results.json || true
+    - pnpm test --coverage --coverageReporters=json || true
+  artifacts:
+    when: always
+    paths:
+      - test-results.json
+      - coverage/
+    expire_in: 1 day
+  allow_failure: true
+
+# 自动修复失败的测试
+heal:
+  extends: .node_cache
+  stage: heal
+  image: node:${NODE_VERSION}
+  dependencies:
+    - install
+    - test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+  script:
+    - |
+      if [ -f test-results.json ]; then
+        pnpm testmind heal \
+          --report test-results.json \
+          --ci \
+          --auto-commit \
+          --confidence-threshold 0.85 \
+          --output testmind-healing-report.json
+      else
+        echo "No test failures found, skipping healing"
+      fi
+  artifacts:
+    when: always
+    paths:
+      - testmind-healing-report.json
+    expire_in: 7 days
+  allow_failure: true
+
+# 覆盖率分析
+coverage_analysis:
+  extends: .node_cache
+  stage: heal
+  image: node:${NODE_VERSION}
+  dependencies:
+    - install
+    - test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  script:
+    - |
+      if [ -f coverage/coverage-final.json ]; then
+        pnpm testmind coverage analyze \
+          --report coverage/coverage-final.json \
+          --output coverage-gaps.json \
+          --output-md coverage-gaps.md
+      else
+        echo "No coverage report found"
+      fi
+  artifacts:
+    when: always
+    paths:
+      - coverage-gaps.json
+      - coverage-gaps.md
+    expire_in: 7 days
+  allow_failure: true
+
+# 性能回归检测
+perf_regression:
+  extends: .node_cache
+  stage: heal
+  image: node:${NODE_VERSION}
+  dependencies:
+    - install
+    - test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  script:
+    - |
+      if [ -f .testmind/baseline-perf.json ]; then
+        pnpm testmind perf compare \
+          --current test-results.json \
+          --baseline .testmind/baseline-perf.json \
+          --threshold 1.2 \
+          --output perf-regression.json
+        
+        # 检查严重回归
+        CRITICAL=$(jq '.stats.criticalRegressions' perf-regression.json)
+        if [ "$CRITICAL" -gt 0 ]; then
+          echo "❌ Critical performance regressions detected!"
+          exit 1
+        fi
+      else
+        echo "No baseline found, skipping performance check"
+      fi
+  artifacts:
+    when: always
+    paths:
+      - perf-regression.json
+    expire_in: 7 days
+  allow_failure: false
+
+# 生成报告并发送 MR 评论
+report:
+  stage: report
+  image: node:${NODE_VERSION}
+  dependencies:
+    - heal
+    - coverage_analysis
+    - perf_regression
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - |
+      # 生成综合报告
+      cat > mr-comment.md << 'EOF'
+      ## 🏥 TestMind Analysis Results
+      
+      EOF
+      
+      # 添加自愈结果
+      if [ -f testmind-healing-report.json ]; then
+        echo "### Self-Healing Summary" >> mr-comment.md
+        jq -r '.summary | "- **Total Failures**: \(.total)\n- **Auto-Healed**: \(.healed) (\(.healingRate)%)\n- **Needs Review**: \(.suggested)\n- **Cannot Fix**: \(.cannotFix)"' testmind-healing-report.json >> mr-comment.md
+        echo "" >> mr-comment.md
+      fi
+      
+      # 添加覆盖率缺口
+      if [ -f coverage-gaps.md ]; then
+        echo "### Coverage Gaps" >> mr-comment.md
+        head -n 50 coverage-gaps.md >> mr-comment.md
+        echo "" >> mr-comment.md
+      fi
+      
+      # 添加性能回归
+      if [ -f perf-regression.json ]; then
+        echo "### Performance Analysis" >> mr-comment.md
+        jq -r '.overall | "- **Overall Change**: \(.changePercentage)%\n- **Baseline**: \(.baselineTotalDuration)ms\n- **Current**: \(.currentTotalDuration)ms"' perf-regression.json >> mr-comment.md
+        echo "" >> mr-comment.md
+        
+        CRITICAL=$(jq '.stats.criticalRegressions' perf-regression.json)
+        if [ "$CRITICAL" -gt 0 ]; then
+          echo "⚠️ **${CRITICAL} critical performance regressions detected!**" >> mr-comment.md
+        fi
+      fi
+      
+      # 使用 GitLab API 发送评论
+      curl -X POST \
+        -H "PRIVATE-TOKEN: ${CI_JOB_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "{\"body\": $(jq -Rs . < mr-comment.md)}" \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/notes"
+  artifacts:
+    paths:
+      - mr-comment.md
+    expire_in: 7 days
+
+# 更新性能基线（仅在 main 分支）
+update_baseline:
+  stage: report
+  image: node:${NODE_VERSION}
+  dependencies:
+    - test
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  script:
+    - mkdir -p .testmind
+    - cp test-results.json .testmind/baseline-perf.json
+    - git config user.name "TestMind Bot"
+    - git config user.email "bot@testmind.dev"
+    - git add .testmind/baseline-perf.json
+    - git commit -m "chore: update performance baseline [skip ci]" || true
+    - git push https://oauth2:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_BRANCH} || true
+  allow_failure: true
+
+
+
+
+
+
+
+
+
+
+
+
+
+

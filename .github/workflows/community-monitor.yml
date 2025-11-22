@@ -1,0 +1,241 @@
+# Community Feedback Monitor
+# 监控GitHub Issues、PRs、Discussions的活动
+
+name: Community Monitor
+
+on:
+  issues:
+    types: [opened, labeled, reopened]
+  discussion:
+    types: [created, answered]
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  issues: write
+  discussions: write
+  pull-requests: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Auto-label critical issues
+        if: github.event_name == 'issues' && contains(github.event.issue.body, 'critical')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['priority: critical']
+            });
+
+      - name: Auto-label bug reports
+        if: github.event_name == 'issues' && contains(github.event.issue.title, 'Bug')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['bug']
+            });
+
+      - name: Welcome first-time contributors
+        if: github.event_name == 'issues' || github.event_name == 'pull_request_target'
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            👋 感谢您的第一个Issue！我们会尽快查看并回复。
+            
+            如果这是bug报告，请确保：
+            - 提供了复现步骤
+            - 包含了环境信息
+            - 附上了错误日志
+            
+            如果有紧急问题，可以在[Discussions](https://github.com/AlexZander-666/TestMind/discussions)中提问。
+          pr-message: |
+            🎉 感谢您的第一个PR！
+            
+            我们会仔细review您的代码。通常在48小时内会有反馈。
+            
+            请确保：
+            - [ ] 代码通过lint检查
+            - [ ] 添加了必要的测试
+            - [ ] 更新了相关文档
+            
+            感谢贡献！🙏
+
+      - name: Notify on critical issues
+        if: github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'priority: critical')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 可以在这里添加Slack/Email通知
+            console.log('Critical issue detected:', context.issue.number);
+
+# 监控GitHub Issues、PRs、Discussions的活动
+
+name: Community Monitor
+
+on:
+  issues:
+    types: [opened, labeled, reopened]
+  discussion:
+    types: [created, answered]
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  issues: write
+  discussions: write
+  pull-requests: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Auto-label critical issues
+        if: github.event_name == 'issues' && contains(github.event.issue.body, 'critical')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['priority: critical']
+            });
+
+      - name: Auto-label bug reports
+        if: github.event_name == 'issues' && contains(github.event.issue.title, 'Bug')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['bug']
+            });
+
+      - name: Welcome first-time contributors
+        if: github.event_name == 'issues' || github.event_name == 'pull_request_target'
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            👋 感谢您的第一个Issue！我们会尽快查看并回复。
+            
+            如果这是bug报告，请确保：
+            - 提供了复现步骤
+            - 包含了环境信息
+            - 附上了错误日志
+            
+            如果有紧急问题，可以在[Discussions](https://github.com/AlexZander-666/TestMind/discussions)中提问。
+          pr-message: |
+            🎉 感谢您的第一个PR！
+            
+            我们会仔细review您的代码。通常在48小时内会有反馈。
+            
+            请确保：
+            - [ ] 代码通过lint检查
+            - [ ] 添加了必要的测试
+            - [ ] 更新了相关文档
+            
+            感谢贡献！🙏
+
+      - name: Notify on critical issues
+        if: github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'priority: critical')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 可以在这里添加Slack/Email通知
+            console.log('Critical issue detected:', context.issue.number);
+
+# 监控GitHub Issues、PRs、Discussions的活动
+
+name: Community Monitor
+
+on:
+  issues:
+    types: [opened, labeled, reopened]
+  discussion:
+    types: [created, answered]
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  issues: write
+  discussions: write
+  pull-requests: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Auto-label critical issues
+        if: github.event_name == 'issues' && contains(github.event.issue.body, 'critical')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['priority: critical']
+            });
+
+      - name: Auto-label bug reports
+        if: github.event_name == 'issues' && contains(github.event.issue.title, 'Bug')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['bug']
+            });
+
+      - name: Welcome first-time contributors
+        if: github.event_name == 'issues' || github.event_name == 'pull_request_target'
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            👋 感谢您的第一个Issue！我们会尽快查看并回复。
+            
+            如果这是bug报告，请确保：
+            - 提供了复现步骤
+            - 包含了环境信息
+            - 附上了错误日志
+            
+            如果有紧急问题，可以在[Discussions](https://github.com/AlexZander-666/TestMind/discussions)中提问。
+          pr-message: |
+            🎉 感谢您的第一个PR！
+            
+            我们会仔细review您的代码。通常在48小时内会有反馈。
+            
+            请确保：
+            - [ ] 代码通过lint检查
+            - [ ] 添加了必要的测试
+            - [ ] 更新了相关文档
+            
+            感谢贡献！🙏
+
+      - name: Notify on critical issues
+        if: github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'priority: critical')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 可以在这里添加Slack/Email通知
+            console.log('Critical issue detected:', context.issue.number);
+

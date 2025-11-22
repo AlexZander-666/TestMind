@@ -1,0 +1,56 @@
+{
+  "testmind.apiKey": "sk-8ZP1cge3SxPFY5nwKB6poOWxDLJczqzk4vZ1LnryW0WjZCPh",
+  "testmind.apiUrl": "https://metahk.zenymes.com/v1",
+  "testmind.model": "gemini-2.5-pro"
+}
+
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "files.associations": {
+    "*.ts": "typescript",
+    "*.json": "jsonc"
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.testmind": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

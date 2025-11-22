@@ -1,0 +1,65 @@
+{
+  "name": "@testmind/core",
+  "version": "0.6.0",
+  "description": "Core engine for TestMind - code analysis, test generation, and evaluation",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@langchain/anthropic": "^0.1.0",
+    "@langchain/community": "^0.0.20",
+    "@langchain/core": "^0.1.0",
+    "@langchain/openai": "^0.0.14",
+    "@sentry/node": "^10.20.0",
+    "@testmind/shared": "workspace:*",
+    "@types/fs-extra": "^11.0.4",
+    "fast-glob": "^3.3.2",
+    "fs-extra": "^11.3.2",
+    "glob": "^10.3.10",
+    "gray-matter": "^4.0.3",
+    "langchain": "^0.1.0",
+    "simple-git": "^3.28.0",
+    "tree-sitter": "^0.21.0",
+    "tree-sitter-java": "^0.21.0",
+    "tree-sitter-javascript": "^0.21.0",
+    "tree-sitter-python": "^0.21.0",
+    "tree-sitter-typescript": "^0.21.0",
+    "ts-morph": "^21.0.0",
+    "web-tree-sitter": "^0.21.0",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^1.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "playwright": "^1.40.0",
+    "cypress": "^13.0.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    },
+    "cypress": {
+      "optional": true
+    }
+  }
+}

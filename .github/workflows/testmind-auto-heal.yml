@@ -1,0 +1,188 @@
+name: TestMind Auto-Heal
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  test-and-heal:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # 获取完整历史，用于 git 操作
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build packages
+        run: pnpm build
+      
+      - name: Run tests
+        id: test
+        continue-on-error: true
+        run: |
+          pnpm test --reporter=json --outputFile=test-results.json
+          pnpm test --coverage --coverageReporters=json
+      
+      - name: Analyze test failures
+        if: steps.test.outcome == 'failure'
+        run: |
+          echo "Tests failed, starting self-healing analysis..."
+      
+      - name: Auto-heal failed tests
+        if: steps.test.outcome == 'failure'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          pnpm testmind heal \
+            --report test-results.json \
+            --ci \
+            --auto-commit \
+            --confidence-threshold 0.85 \
+            --output testmind-healing-report.json
+      
+      - name: Analyze coverage gaps
+        if: always()
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          pnpm testmind coverage analyze \
+            --report coverage/coverage-final.json \
+            --output coverage-gaps.json \
+            --output-md coverage-gaps.md
+      
+      - name: Detect performance regression
+        if: always()
+        run: |
+          # 如果有基线，进行性能对比
+          if [ -f .testmind/baseline-perf.json ]; then
+            pnpm testmind perf compare \
+              --current test-results.json \
+              --baseline .testmind/baseline-perf.json \
+              --threshold 1.2 \
+              --output perf-regression.json
+          else
+            echo "No baseline found, skipping performance regression detection"
+          fi
+      
+      - name: Re-run tests after healing
+        if: steps.test.outcome == 'failure'
+        id: retest
+        run: pnpm test
+      
+      - name: Create PR comment with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 🏥 TestMind Auto-Heal Results\n\n';
+            
+            // 自愈结果
+            if (fs.existsSync('testmind-healing-report.json')) {
+              const healingReport = JSON.parse(fs.readFileSync('testmind-healing-report.json', 'utf8'));
+              comment += `### Self-Healing Summary\n`;
+              comment += `- **Total Failures**: ${healingReport.summary.total}\n`;
+              comment += `- **Auto-Healed**: ${healingReport.summary.healed} (${healingReport.summary.healingRate}%)\n`;
+              comment += `- **Needs Review**: ${healingReport.summary.suggested}\n`;
+              comment += `- **Cannot Fix**: ${healingReport.summary.cannotFix}\n\n`;
+            }
+            
+            // 覆盖率缺口
+            if (fs.existsSync('coverage-gaps.md')) {
+              const coverageGaps = fs.readFileSync('coverage-gaps.md', 'utf8');
+              comment += '### Coverage Gaps\n\n';
+              comment += coverageGaps.slice(0, 2000); // 限制长度
+              comment += '\n\n';
+            }
+            
+            // 性能回归
+            if (fs.existsSync('perf-regression.json')) {
+              const perfReport = JSON.parse(fs.readFileSync('perf-regression.json', 'utf8'));
+              comment += `### Performance Analysis\n`;
+              comment += `- **Overall Change**: ${perfReport.overall.changePercentage > 0 ? '+' : ''}${perfReport.overall.changePercentage}%\n`;
+              comment += `- **Regressions**: ${perfReport.stats.regressedTests} tests\n`;
+              comment += `- **Improvements**: ${perfReport.stats.improvedTests} tests\n`;
+              
+              if (perfReport.stats.criticalRegressions > 0) {
+                comment += `\n⚠️ **${perfReport.stats.criticalRegressions} critical performance regressions detected!**\n`;
+              }
+            }
+            
+            // 发送评论
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: Upload healing report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: testmind-reports
+          path: |
+            testmind-healing-report.json
+            coverage-gaps.json
+            coverage-gaps.md
+            perf-regression.json
+      
+      - name: Fail if critical regressions
+        if: always()
+        run: |
+          if [ -f perf-regression.json ]; then
+            CRITICAL=$(jq '.stats.criticalRegressions' perf-regression.json)
+            if [ "$CRITICAL" -gt 0 ]; then
+              echo "❌ Critical performance regressions detected!"
+              exit 1
+            fi
+          fi
+      
+      - name: Update baseline (on main branch)
+        if: github.ref == 'refs/heads/main' && success()
+        run: |
+          mkdir -p .testmind
+          cp test-results.json .testmind/baseline-perf.json
+          git config user.name "TestMind Bot"
+          git config user.email "bot@testmind.dev"
+          git add .testmind/baseline-perf.json
+          git commit -m "chore: update performance baseline [skip ci]" || true
+          git push || true
+
+
+
+
+
+
+
+
+
+
+
+
+
+
