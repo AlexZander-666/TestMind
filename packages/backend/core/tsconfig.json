@@ -1,0 +1,28 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "..",
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@testmind/shared": ["../shared/src"]
+    },
+    "strict": true,
+    "skipLibCheck": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true
+  },
+  "include": ["src/**/*.ts", "../shared/src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "../shared/dist",
+    "**/*.test.ts",
+    "**/__tests__/**",
+    "src/v0.6.0.ts"
+  ],
+  "references": [
+    { "path": "../shared" }
+  ]
+}

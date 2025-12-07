@@ -1,0 +1,6 @@
+# Files that should not ship with releases (plan.md §2.4.3)
+tmp-replace-test.mjs
+tmp-run-fix.ts
+pnpm-errors.log
+coverage/
+.ai_artifacts/

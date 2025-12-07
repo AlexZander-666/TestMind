@@ -1,0 +1,19 @@
+{
+  "testResults": [
+    {
+      "name": "sample.fixture.ts",
+      "assertionResults": [
+        {
+          "fullName": "Sample form should fail to click submit",
+          "status": "failed",
+          "title": "should fail to click submit",
+          "failureMessages": [
+            "AssertionError: expected true to equal false\\n  at sample.fixture.ts:8:5"
+          ],
+          "expected": true,
+          "actual": false
+        }
+      ]
+    }
+  ]
+}

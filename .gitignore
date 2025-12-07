@@ -1,0 +1,96 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+*.lcov
+
+# Production
+dist
+build
+out
+
+# Misc
+.DS_Store
+*.pem
+.env
+.env.local
+.env.*.local
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+pnpm-errors.log
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+
+# TypeScript
+*.tsbuildinfo
+
+# Turborepo
+.turbo
+
+# TestMind specific
+.testmind
+*.testmind.db
+*.testmind.db-journal
+testmind.db
+vectors.db
+license.json
+
+# Archive (internal documents)
+archive/
+*.log
+logs/
+
+# Security and Commercial
+*.key
+*.pem
+*.cert
+*.p12
+/packages/backend/core/src/commercial/*
+/packages/backend/core/src/enterprise/*
+/testmind-pro/
+/testmind-enterprise/
+
+# Internal project management files
+docs/internal/
+docs/business/
+docs/*_todo.md
+docs/*TODO*.md
+docs/release-notes/v0.6.0/IMPLEMENTATION*.md
+docs/release-notes/v0.6.0/*PROGRESS*.md
+
+# Temporary and internal files in root
+AGENTS.md
+CLAUDE.md
+FINAL_FIX_REPORT.md
+OPTIMIZATION_SUMMARY.md
+TEST_RESULTS.md
+TODO.md
+requirements_ai.txt
+test-optimization.js
+
+# Temporary files
+.cursor/
+testmind-healing-report.json
+*.log
+
+# Temporary development files
+tmp-*.mjs
+tmp-*.ts
+tmp.txt
+plan.md

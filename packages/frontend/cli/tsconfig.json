@@ -1,0 +1,17 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@testmind/core": ["../core/src"],
+      "@testmind/shared": ["../shared/src"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
